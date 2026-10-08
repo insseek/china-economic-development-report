@@ -827,8 +827,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       vi === pos.view ? ' on' : ''}" data-view="${vi}">${v}</button>`).join('');
     // **一排**，与两岸那张完全同构：口径按钮 → 「视图：」标签 → 视图按钮。
     // （此前分两排，比两岸那张高出一行，看着不齐。）
-    host.innerHTML = `<div>${cals}<span class="lbl" style="margin-left:14px">视图：</span>`
-      + `${views}</div>`;
+    host.innerHTML = `<div><span class="lbl">口径：</span>${cals}`
+      + `<span class="lbl" style="margin-left:14px">视图：</span>${views}</div>`;
     host.querySelectorAll('button[data-cal]').forEach((b) => {
       b.addEventListener('click', () => {
         onChange(GDP_CALS[Number(b.dataset.cal)].codes[gdpPos(code).view]);
