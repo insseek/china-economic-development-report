@@ -69,6 +69,8 @@ h3{font-size:16.5px;margin:30px 0 10px;color:var(--ink)}
 .chart.sm{height:250px}
 .chart.lg{height:520px}
 .chart.xl{height:620px}
+.dsh-pick-label{font-size:12.5px;color:#5a6472;margin-right:6px}
+.dsh-pick-hint{font-size:11.5px;color:#a3adba;margin-left:10px}
 .chartTitle{font-size:14px;font-weight:600;margin:0 0 2px}
 .chartNote{font-size:12.5px;color:var(--ink3);margin:0 0 12px}
 
@@ -733,6 +735,50 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   }
 
   /**
+   * 唯一的国家选择器——**全报告只有这一处**。
+   *
+   * 原先 renderBumpPicker / renderRadarPicker 各写一遍（按钮 class、至少留一国、
+   * 重画回调都靠手抄），而「各领域评分轨迹」「重要指标数据」干脆没有选择器，
+   * 读者只能看 10 条线糊在一起（作者指出）。
+   *
+   * opts: { host, label, items:[{key,label}], picked:{key:bool}, onChange, hint }
+   */
+  function picker(opts) {
+    const o = opts || {};
+    const host = typeof o.host === 'string' ? document.getElementById(o.host) : o.host;
+    if (!host) return;
+    host.innerHTML = '';
+    if (o.label) {
+      const lbl = document.createElement('span');
+      lbl.className = 'dsh-pick-label';
+      lbl.textContent = o.label;
+      host.appendChild(lbl);
+    }
+    o.items.forEach((it) => {
+      const b = document.createElement('button');
+      b.className = `btn mini${o.picked[it.key] ? ' on' : ''}`;
+      b.textContent = it.label;
+      b.onclick = function () {
+        o.picked[it.key] = !o.picked[it.key];
+        // 至少保留一国，否则没东西可画
+        if (!o.items.filter((x) => o.picked[x.key]).length) {
+          o.picked[it.key] = true;
+          return;
+        }
+        picker(o);
+        o.onChange();
+      };
+      host.appendChild(b);
+    });
+    if (o.hint) {
+      const hint = document.createElement('span');
+      hint.className = 'dsh-pick-hint';
+      hint.textContent = o.hint;
+      host.appendChild(hint);
+    }
+  }
+
+  /**
    * 统一的卡片构建——**全报告只有这一处**。
    * 领域评分轨迹 / 中国关键领域轨迹 / 重要指标数据，三处原先各写一遍，
    * 结果样式与列数都不一致（作者指出）。
@@ -1329,6 +1375,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   window.DSHChart = {
     num,
     card,
+    picker,
     seriesTip,
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
