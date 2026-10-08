@@ -469,6 +469,8 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
       总量看体量，人均看生活水平。纵轴为对数刻度——跨三个数量级时，线性轴会把小国压在底部看不见。</p>
     <div class="ec-card dsh-gdp-card">
       <div class="ec-ctl" id="gdpCtl"></div>
+      <!-- 按钮下方这一行讲的是「中国什么时候超过谁」——由 src/charts.js 从数据算出。 -->
+      <p class="ec-note" id="gdpLead" style="margin:0 0 10px"></p>
       <div id="cGDP" class="ec-chart tall"></div>
     </div>
   </section>
@@ -790,6 +792,61 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
    * }
    * 返回一个 setCal/setView 控制器，便于别处联动。
    */
+  // ── 「各国 GDP 对比」按钮下方那句话 ────────────────────────────────
+  //
+  // 「中国在哪一年超过谁成为世界第二／第一」——**从数据里逐年排名算出来**，
+  // 不写死。换一版数据它自己就跟着变；名义口径下中国至今不是第一，
+  // 那句就如实写「尚未」，不能编。
+  //
+  // 注意算的是**总量**：视图切到人均时，这句话仍讲总量（人尽皆知的排名
+  // 都是按总量的），故先把人均代码映射回总量代码。
+  const GDP_TOTAL_OF = {
+    'NY.GDP.PCAP.CD': 'NY.GDP.MKTP.CD',
+    'NY.GDP.PCAP.PP.CD': 'NY.GDP.MKTP.PP.CD',
+  };
+
+  /** 中国在总量上的两次跃升。返回 {second:{year,cn}, first:{year,cn}|null}。 */
+  function gdpCross(data, code) {
+    const total = GDP_TOTAL_OF[code] || code;
+    const blk = (data.gdp || {})[total];
+    if (!blk || !blk.values) return null;
+    const ys = data.years || [];
+    const mainEnt = (data.entities || []).filter((e) => e.main);
+    const byIso = {};
+    mainEnt.forEach((e) => { byIso[e.iso] = e.cn; });
+    let prev = null;
+    const out = { second: null, first: null };
+    ys.forEach((y, i) => {
+      const row = mainEnt
+        .map((e) => ({ iso: e.iso, v: (blk.values[e.iso] || [])[i] }))
+        .filter((o) => o.v !== null && o.v !== undefined)
+        .sort((a, b) => b.v - a.v);
+      const at = row.findIndex((o) => o.iso === 'CHN');
+      if (at < 0) return;
+      const rank = at + 1;
+      // 排名上升的那一年：上一年排在它前面、这一年被它超过的那个
+      if (prev !== null && rank < prev && (rank === 2 || rank === 1)) {
+        const passed = row.filter((o) => o.iso !== 'CHN')[rank - 1];
+        const rec = { year: y, cn: passed ? byIso[passed.iso] || passed.iso : '—' };
+        if (rank === 2) out.second = rec;
+        if (rank === 1) out.first = rec;
+      }
+      prev = rank;
+    });
+    return out;
+  }
+
+  /** 把上面那两次跃升写成一句。名义口径下没有第一次，就说「尚未」。 */
+  function gdpLead(data, code, calLabel) {
+    const c = gdpCross(data, code);
+    if (!c || !c.second) return '';
+    const pre = calLabel ? `按 ${calLabel}，` : '';
+    // 没有第一次跃升就**不写**（作者定）——不写「尚未成为世界第一」这种交代。
+    let s = `${pre}中国的 GDP 总量，${c.second.year} 年超过${c.second.cn}成为世界第二`;
+    if (c.first) s += `，${c.first.year} 年超过${c.first.cn}成为世界第一`;
+    return `${s}。`;
+  }
+
   // ── 「各国 GDP 对比」的按钮：口径 × 视图，两排 ──────────────────────
   //
   // 这张图本质是 2×2：口径（GDP / PPP）× 视图（总量 / 人均），
@@ -1130,6 +1187,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
     abbr, num, eventMark, EVENTS, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS,
+    gdpCross, gdpLead,
     dressCrossCard,
     CS_VIEWS,
   };
@@ -1359,6 +1417,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       },
       series,
     });
+    // 按钮下方那一行：中国什么时候超过谁。由共享层从数据算出。
+    const lead = el('gdpLead');
+    if (lead) {
+      const isPPP = gdpCode.indexOf('.PP.') >= 0;
+      lead.innerHTML = C.gdpLead(D, gdpCode, isPPP ? 'PPP（购买力平价）' : '');
+    }
   }
   /* ─────────────── 三 · 经济与产业 ─────────────── */
 
