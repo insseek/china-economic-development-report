@@ -805,6 +805,14 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     'NY.GDP.PCAP.PP.CD': 'NY.GDP.MKTP.PP.CD',
   };
 
+  /** 名次转中文序数：1→一、2→二……12→十二。 */
+  function cnNum(n) {
+    const d = '一二三四五六七八九十';
+    if (n <= 10) return d[n - 1];
+    if (n < 20) return `十${d[n - 11]}`;
+    return String(n);
+  }
+
   /** 中国在总量上的两次跃升。返回 {second:{year,cn}, first:{year,cn}|null}。 */
   function gdpCross(data, code) {
     const total = GDP_TOTAL_OF[code] || code;
@@ -827,7 +835,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       // 排名上升的那一年：上一年排在它前面、这一年被它超过的那个
       if (prev !== null && rank < prev && (rank === 2 || rank === 1)) {
         const passed = row.filter((o) => o.iso !== 'CHN')[rank - 1];
-        const rec = { year: y, cn: passed ? byIso[passed.iso] || passed.iso : '—' };
+        const rec = { year: y, rank, cn: passed ? byIso[passed.iso] || passed.iso : '—' };
         if (rank === 2) out.second = rec;
         if (rank === 1) out.first = rec;
       }
@@ -841,9 +849,14 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     const c = gdpCross(data, code);
     if (!c || !c.second) return '';
     const pre = calLabel ? `按 ${calLabel}，` : '';
+    // 名次本身也由数据给（c.second.rank / c.first.rank），序数由它算出来，
+    // 句中不留「第二」「第一」这类写死的字面量。
+    let s = `${pre}中国的 GDP 总量，${c.second.year} 年超过${c.second.cn}`
+      + `成为世界第${cnNum(c.second.rank)}`;
+    if (c.first) {
+      s += `，${c.first.year} 年超过${c.first.cn}成为世界第${cnNum(c.first.rank)}`;
+    }
     // 没有第一次跃升就**不写**（作者定）——不写「尚未成为世界第一」这种交代。
-    let s = `${pre}中国的 GDP 总量，${c.second.year} 年超过${c.second.cn}成为世界第二`;
-    if (c.first) s += `，${c.first.year} 年超过${c.first.cn}成为世界第一`;
     return `${s}。`;
   }
 
@@ -1186,7 +1199,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
-    abbr, num, eventMark, EVENTS, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS,
+    abbr, num, eventMark, EVENTS, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS, cnNum,
     gdpCross, gdpLead,
     dressCrossCard,
     CS_VIEWS,
