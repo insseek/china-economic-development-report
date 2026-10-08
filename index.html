@@ -1479,10 +1479,14 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     // 上界取「真实有数据的年份」：数组里 2026 与 2025 的值逐位相同，是外推。
     // 年份按**数据实际有值的区间**取：面板从 1960 起，但各口径的首年不同
     // （PPP 要到 1990 年代初），照面板铺开左边会留一大片空白。
-    const allYs = D.years.filter((y) => y >= D.meta.series_start
+    // 注意：blk.values 里的数组是**按 D.years 对齐**的，所以取区间必须拿 D.years
+    // 去数下标。此前传的是 allYs（从 series_start 起，比 D.years 短一截），
+    // 下标整体错位 11 年——1982 的 PPP 显示成 1993，1952 的名义显示成 1963。
+    const span = C.dataSpan(D.years, [blk.values], MAIN_ENT.map((e) => e.iso));
+    const ys = D.years.filter((y) => (span.from === null || y >= span.from)
+      && (span.to === null || y <= span.to)
+      && y >= D.meta.series_start
       && y <= (D.gdp_end || D.years[D.years.length - 1]));
-    const span = C.dataSpan(allYs, [blk.values], MAIN_ENT.map((e) => e.iso));
-    const ys = span.from === null ? allYs : allYs.filter((y) => y >= span.from && y <= span.to);
     const i0 = D.years.indexOf(ys[0]);
     const isos = MAIN_ENT.map((e) => e.iso);
     const byIso = {};
