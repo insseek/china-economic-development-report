@@ -774,7 +774,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   // 按钮标签。**默认那档叫「GDP」**——通常说的 GDP 就是现价（名义）GDP，
   // 国家统计局公布的也是它，不必强调「名义」；只有 PPP 才需要点名，
   // 那是另一把尺。故 GDP 在前、PPP 在后，与数据里的 default 一致。
-  const CS_CAL_LABEL = { nominal: 'GDP', ppp: 'PPP（购买力平价）' };
+  const CS_CAL_LABEL = { nominal: '名义GDP', ppp: 'PPP（购买力平价）' };
 
   /**
    * 画两岸对比图，并把口径/视图按钮、引言、图注一并管起来。
@@ -796,8 +796,10 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   // 四个组合对应四个世行指标代码。此前两页都把它摊成四个平铺按钮、
   // 用「名义美元：」「购买力平价：」两个前缀分组，既啰嗦、两页还不一致。
   // 现在按两岸那张的写法：口径一排、视图一排。
+  // 口径标签写「名义GDP」而不是「GDP」：旁边视图里也有「GDP 总量」，
+  // 两个都写 GDP 会分不清哪个是尺、哪个是量。（作者定）
   const GDP_CALS = [
-    { label: 'GDP', codes: ['NY.GDP.MKTP.CD', 'NY.GDP.PCAP.CD'] },
+    { label: '名义GDP', codes: ['NY.GDP.MKTP.CD', 'NY.GDP.PCAP.CD'] },
     { label: 'PPP（购买力平价）', codes: ['NY.GDP.MKTP.PP.CD', 'NY.GDP.PCAP.PP.CD'] },
   ];
   const GDP_VIEWS = ['GDP 总量', '人均 GDP'];
