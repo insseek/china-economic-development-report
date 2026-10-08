@@ -739,11 +739,15 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   // ══════════════════════════════════════════════════════════════════════
 
   // 视图。总量与人均的单位随口径变，故不写死在这里。
+  // 按钮顺序即这里的书写顺序（作者定）：人均在前、总量在后；同一量纲里
+  // 水平在前、倍数在后。**默认选「人均倍数」**——台湾地区的总量只有中国大陆的
+  // 约 5%，放同轴上就是贴底一条平线，画不出东西；倍数才表达得出这个量级差。
+  // （另一张「各国 GDP 对比」体量同量级，那边默认仍是「GDP 总量」，不动。）
   const CS_VIEWS = {
-    total: { label: 'GDP 总量', kind: 'level', perCapita: false },
     pc: { label: '人均 GDP', kind: 'level', perCapita: true },
-    totalRatio: { label: '总量倍数', unit: '倍（中国大陆÷台湾地区）', kind: 'ratio' },
     pcRatio: { label: '人均倍数', unit: '倍（台湾地区÷中国大陆）', kind: 'ratio' },
+    total: { label: 'GDP 总量', kind: 'level', perCapita: false },
+    totalRatio: { label: '总量倍数', unit: '倍（中国大陆÷台湾地区）', kind: 'ratio' },
   };
   // 按钮标签。两档都是 IMF 的、同一年份范围（1980–2025），差别只在**口径**：
   // 购买力平价按物价折算，名义美元按市场汇率。这是两个不同的概念，并列合理；
@@ -771,7 +775,9 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     const CS = cfg.data || {};
     const cals = CS.calibers || {};
     let cal = CS.default && cals[CS.default] ? CS.default : Object.keys(cals)[0];
-    let view = 'total';
+    // 默认「人均 GDP」——两条线都在，读者一眼看到两岸各自的位置与距离。
+    // （总量那档与它差 20 倍量级，放同轴画不出来，故排到后面。）
+    let view = 'pc';
 
     function block() { return cals[cal]; }
 
