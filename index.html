@@ -1038,6 +1038,13 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   const charts = [];
   const instMap = {}; // id → ECharts 实例（复用实例，避免叠加）
 
+  // 本页参与横向对照的实体：十国，**不含台湾地区**。
+  //
+  // 台湾地区只在「四 两岸 GDP 对比」那一节出现——它在其余领域根本没有指标数据，
+  // 混进各国 GDP、领域评分、指标小图里，会让人以为那些方面也可比。
+  // 跨两岸的那一节用的是 D.cross，与这份清单无关。
+  let MAIN_ENT = [];
+
   /** 实体颜色取自数据（每个实体一个色），两页同源。 */
   function ec(iso) { return C.colorOf(D.entities, iso); }
 
@@ -1236,21 +1243,21 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     // 上界取「真实有数据的年份」：数组里 2026 与 2025 的值逐位相同，是外推。
     const ys = D.years.filter((y) => y >= D.meta.series_start && y <= (D.gdp_end || D.years[D.years.length - 1]));
     const i0 = D.years.indexOf(ys[0]);
-    const isos = D.entities.map((e) => e.iso);
+    const isos = MAIN_ENT.map((e) => e.iso);
     const byIso = {};
-    D.entities.forEach((e) => { byIso[e.iso] = e; });
+    MAIN_ENT.forEach((e) => { byIso[e.iso] = e; });
     const series = isos.map((iso) => {
       const arr = (blk.values[iso] || []).slice(i0, i0 + ys.length);
-      const main = ['CHN', 'USA', 'TWN'].indexOf(iso) >= 0;
+      const main = ['CHN', 'USA'].indexOf(iso) >= 0;
       return {
         name: (byIso[iso] || {}).cn || iso, type: 'line', data: arr,
         showSymbol: false, smooth: false, connectNulls: false,
         lineStyle: {
           width: main ? 2.4 : 1.3,
-          color: iso === 'CHN' ? ec('CHN') : (iso === 'TWN' ? ec('TWN') : (iso === 'USA' ? '#1f6feb' : C.INK3)),
+          color: iso === 'CHN' ? ec('CHN') : (iso === 'USA' ? '#1f6feb' : C.INK3),
           opacity: main ? 1 : 0.85,
         },
-        itemStyle: { color: iso === 'CHN' ? ec('CHN') : (iso === 'TWN' ? ec('TWN') : (iso === 'USA' ? '#1f6feb' : C.INK3)) },
+        itemStyle: { color: iso === 'CHN' ? ec('CHN') : (iso === 'USA' ? '#1f6feb' : C.INK3) },
         z: main ? 3 : 1,
         markLine: iso === 'CHN' ? eventMark('category') : undefined,
       };
@@ -1258,7 +1265,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     draw('cGDP', {
       tooltip: {
         trigger: 'axis',
-        // 十一个实体的曲线挤在一起，弹窗按数值从大到小排才看得清谁高谁低。
+        // 十个实体的曲线挤在一起，弹窗按数值从大到小排才看得清谁高谁低。
         order: 'valueDesc',
         valueFormatter(v) { return v === null ? '无数据' : (v >= 1e12 ? `${(v / 1e12).toFixed(2)} 万亿` : (v >= 1e8 ? `${(v / 1e8).toFixed(1)} 亿` : Number(v).toLocaleString('zh-CN'))); },
       },
@@ -1288,11 +1295,11 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 
   /* ─────────────── 三 · 经济与产业 ─────────────── */
 
-  /** 该领域综合评分的时间轨迹：中国 + 其余十个实体。 */
+  /** 该领域综合评分的时间轨迹：中国 + 其余九国。 */
   function renderDomScore() {
     const blk = (D.dom && D.dom.score) || {};
     const ys = D.years;
-    const series = D.entities.filter((e) => e.iso !== 'CHN').map((e) => ({
+    const series = MAIN_ENT.filter((e) => e.iso !== 'CHN').map((e) => ({
       name: e.cn, type: 'line', data: blk[e.iso], showSymbol: false,
       lineStyle: { width: 1, color: C.INK3, opacity: 0.8 }, itemStyle: { color: C.INK3 },
     }));
@@ -1308,7 +1315,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       // 图例顺序按 legend.data 走，不受 series 顺序影响——中国排第一。
       legend: {
         top: 0, type: 'scroll', data: ['中国'].concat(
-          D.entities.filter((e) => e.iso !== 'CHN').map((e) => e.cn),
+          MAIN_ENT.filter((e) => e.iso !== 'CHN').map((e) => e.cn),
         ),
         textStyle: { fontSize: 11.5, fontFamily: FONT, color: C.INK2 },
       },
@@ -1346,7 +1353,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       // 指标项数与计分数写在下方那个构成块里，这里不再重复；
       // 也不提「主报告」——作者指出这是独立报告，读它的人未必知道别处还有一份。
       lead.innerHTML = '下面按子主题分组逐项摊开。'
-        + '每张图里<b>红线是中国</b>，细灰线是其余十个实体——'
+        + '每张图里<b>红线是中国</b>，细灰线是其余九国——'
         + '要看清楚结构，得看全部指标，不能只看评分。';
     }
     // 指标构成：左侧类别、右侧条目的紧凑列表（沿用主报告 .comp 那套样式）
@@ -1393,7 +1400,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         }</h4><p class="meta">${it.unit || ''}　来源：${it.src || '—'}</p>`
           + `<div class="plt" id="${id}"></div>`;
         grid.appendChild(host);
-        const series = D.entities.filter((e) => e.iso !== 'CHN').map((e) => ({
+        const series = MAIN_ENT.filter((e) => e.iso !== 'CHN').map((e) => ({
           name: e.cn, type: 'line', data: it.values[e.iso], showSymbol: false,
           lineStyle: { width: 1, color: C.INK3, opacity: 0.75 }, itemStyle: { color: C.INK3 },
         }));
@@ -1589,6 +1596,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 
   function ecInit(data) {
     D = data;
+    MAIN_ENT = D.entities.filter((e) => e.iso !== 'TWN');
     renderTimeline();
     renderCaliber();
     renderRank();
