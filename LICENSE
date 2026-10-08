@@ -1,0 +1,33 @@
+# 许可
+
+本仓库围绕一份文件：`index.html`——《中国经济的腾飞 1949–2026》，
+由 [gov-capacity-report](https://github.com/insseek/gov-capacity-report) 生成。
+其余文件是部署配置与许可说明，不含内容。
+
+## 报告内容：CC BY-NC-SA 4.0
+
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)
+（署名—非商业性使用—相同方式共享）。
+
+- **署名** —— 保留报告内的作者署名与来源清单
+- **非商业** —— 不得用于商业目的
+- **相同方式共享** —— 改编作品须以相同许可发布
+
+## 报告用到的数据来源
+
+- **世界银行** 开放数据（GDP、人均、产业结构、贸易、物价等）
+- **IMF**《世界经济展望》（两岸 GDP、购买力平价口径、全球占比）
+- **联合国** 统计司（国民核算）、UN WPP（人口）、UNESCO UIS（研究人员）
+- **Maddison Project**（长期历史估算）
+- **SIPRI** 等（军费，用于防务领域）
+
+各来源的条款以各自官网为准；报告中每处数字都标注了来源与年份区间。
+
+## 本仓库的配置与说明文字
+
+`netlify.toml`、`README.md`、本文件、`.gitignore` 为部署配置与说明，
+同样按 CC BY-NC-SA 4.0 发布。
+
+## 源代码
+
+生成报告的源代码以 MIT 许可发布。
