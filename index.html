@@ -518,8 +518,13 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
   <section class="ec-sec" id="s5">
     <h2><span class="n">五</span>关键节点对照表</h2>
     <p class="lead" id="s6lead"></p>
-    <div class="ec-card" style="overflow:auto;max-height:640px">
-      <table class="ec-tbl" id="tNodes"></table>
+    <!-- 滚动容器是**内层**这个 div，不是卡片本身。
+         若让卡片既带 16px 内边距、又当滚动容器，sticky 表头会贴在内边距框上，
+         它上方那 16px 的带子里会露出滚过去的行——实测就是这个问题。 -->
+    <div class="ec-card">
+      <div style="overflow:auto;max-height:640px">
+        <table class="ec-tbl" id="tNodes"></table>
+      </div>
     </div>
     <div class="ec-warn" id="calWarn"></div>
   </section>
