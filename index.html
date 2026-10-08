@@ -790,6 +790,54 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
    * }
    * 返回一个 setCal/setView 控制器，便于别处联动。
    */
+  // ── 「各国 GDP 对比」的按钮：口径 × 视图，两排 ──────────────────────
+  //
+  // 这张图本质是 2×2：口径（GDP / PPP）× 视图（总量 / 人均），
+  // 四个组合对应四个世行指标代码。此前两页都把它摊成四个平铺按钮、
+  // 用「名义美元：」「购买力平价：」两个前缀分组，既啰嗦、两页还不一致。
+  // 现在按两岸那张的写法：口径一排、视图一排。
+  const GDP_CALS = [
+    { label: 'GDP', codes: ['NY.GDP.MKTP.CD', 'NY.GDP.PCAP.CD'] },
+    { label: 'PPP（购买力平价）', codes: ['NY.GDP.MKTP.PP.CD', 'NY.GDP.PCAP.PP.CD'] },
+  ];
+  const GDP_VIEWS = ['GDP 总量', '人均 GDP'];
+
+  /** 由当前代码反推「第几档口径 / 第几个视图」。 */
+  function gdpPos(code) {
+    for (let ci = 0; ci < GDP_CALS.length; ci += 1) {
+      const vi = GDP_CALS[ci].codes.indexOf(code);
+      if (vi >= 0) return { cal: ci, view: vi };
+    }
+    return { cal: 0, view: 0 };
+  }
+
+  /**
+   * 画这排按钮。onChange(新代码) 由各页自己接——两页的着色与绘图逻辑不同。
+   * hostId 两页都叫 gdpCtl。
+   */
+  function gdpCtl(hostId, code, onChange) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const pos = gdpPos(code);
+    // 口径一排不带前缀（只有两档，自身即标签）；视图一排带「视图：」。
+    const cals = GDP_CALS.map((c, ci) => `<button class="btn mini${
+      ci === pos.cal ? ' on' : ''}" data-cal="${ci}">${c.label}</button>`).join('');
+    const views = GDP_VIEWS.map((v, vi) => `<button class="btn mini${
+      vi === pos.view ? ' on' : ''}" data-view="${vi}">${v}</button>`).join('');
+    host.innerHTML = `<div style="padding:8px 0 2px">${cals}</div>`
+      + `<div style="padding:2px 0 8px"><span class="lbl">视图：</span>${views}</div>`;
+    host.querySelectorAll('button[data-cal]').forEach((b) => {
+      b.addEventListener('click', () => {
+        onChange(GDP_CALS[Number(b.dataset.cal)].codes[gdpPos(code).view]);
+      });
+    });
+    host.querySelectorAll('button[data-view]').forEach((b) => {
+      b.addEventListener('click', () => {
+        onChange(GDP_CALS[gdpPos(code).cal].codes[Number(b.dataset.view)]);
+      });
+    });
+  }
+
   function crossStrait(cfg) {
     const CS = cfg.data || {};
     const cals = CS.calibers || {};
@@ -1072,7 +1120,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
-    abbr, num, eventMark, EVENTS, crossStrait,
+    abbr, num, eventMark, EVENTS, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS,
     dressCrossCard,
     CS_VIEWS,
   };
@@ -1248,42 +1296,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   const GDP_ORDER = ['NY.GDP.MKTP.CD', 'NY.GDP.MKTP.PP.CD', 'NY.GDP.PCAP.CD', 'NY.GDP.PCAP.PP.CD'];
   let gdpCode = GDP_ORDER[0];
 
-  // 四个口径分两组显示。**标签必须写全**：这一版最初把标签里括号内的
-  // 限定语用正则删掉了，于是四个 tab 成了「名义 GDP / GDP / 人均 GDP / 人均 GDP」，
-  // 根本分不清哪个是哪个——区分信息恰恰都在括号里。主报告的做法是按口径分组，
-  // 组前写明「名义美元／购买力平价」，这里照搬。
-  const GDP_GROUPS = [
-    { label: '名义美元', codes: ['NY.GDP.MKTP.CD', 'NY.GDP.PCAP.CD'] },
-    { label: '购买力平价', codes: ['NY.GDP.MKTP.PP.CD', 'NY.GDP.PCAP.PP.CD'] },
-  ];
-  const GDP_SHORT = {
-    'NY.GDP.MKTP.CD': 'GDP 总量',
-    'NY.GDP.PCAP.CD': '人均 GDP',
-    'NY.GDP.MKTP.PP.CD': 'GDP 总量',
-    'NY.GDP.PCAP.PP.CD': '人均 GDP',
-  };
-
   function renderGDPCtl() {
-    const host = el('gdpCtl');
-    if (!host) return;
-    let html = '';
-    GDP_GROUPS.forEach((g, gi) => {
-      html += `<span class="ec-lbl"${gi ? ' style="margin-left:14px"' : ''}>${
-        g.label}：</span>`;
-      g.codes.forEach((c) => {
-        html += `<button data-c="${c}"${c === gdpCode ? ' class="on"' : ''}>${
-          GDP_SHORT[c] || c}</button>`;
-      });
-    });
-    host.innerHTML = html;
-    host.querySelectorAll('button').forEach((b) => {
-      b.addEventListener('click', () => {
-        gdpCode = b.dataset.c;
-        host.querySelectorAll('button').forEach((x) => {
-          x.classList.toggle('on', x.dataset.c === gdpCode);
-        });
-        renderGDP();
-      });
+    // 按钮由共享层生成（口径一排、视图一排），本页只管接住变化后重画。
+    C.gdpCtl('gdpCtl', gdpCode, (code) => {
+      gdpCode = code;
+      renderGDPCtl();
+      renderGDP();
     });
   }
 
