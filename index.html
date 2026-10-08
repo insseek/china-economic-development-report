@@ -693,6 +693,26 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     return { left: 52, right: 26, top: 58, bottom: 38, containLabel: true };
   }
 
+  /**
+   * 弹窗里的数字格式。与 abbr() 不同：那是给坐标轴的（要短），
+   * 这是给读者细看的——所以保留合适的精度，并换成中文数量级。
+   *
+   * 不这么做的后果：弹窗直接印原始浮点数，
+   * 名义 GDP 显示成 15,048,971,000,000，人均显示成 105,521.6193。
+   */
+  function num(v) {
+    if (v === null || v === undefined || Number.isNaN(v)) return '—';
+    const a = Math.abs(v);
+    // 一律带千分位：人均这类四位数量级（6945.40）没有分隔符很难读。
+    const f = (x, d) => x.toLocaleString('zh-CN',
+      { minimumFractionDigits: d, maximumFractionDigits: d });
+    if (a >= 1e12) return f(v / 1e12, 2) + ' 万亿';
+    if (a >= 1e8) return f(v / 1e8, 2) + ' 亿';
+    if (a >= 1e4) return f(v, 0);
+    if (a >= 1) return f(v, 2);
+    return v.toPrecision(3);
+  }
+
   /** 大数缩写：坐标轴放不下「600,000」这类六位数。 */
   function abbr(v) {
     const a = Math.abs(v);
@@ -1048,7 +1068,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
-    abbr, eventMark, EVENTS, crossStrait,
+    abbr, num, eventMark, EVENTS, crossStrait,
     dressCrossCard,
     CS_VIEWS,
   };
@@ -1445,7 +1465,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
           lineStyle: { width: 2.2, color: ec('CHN') }, itemStyle: { color: ec('CHN') }, z: 5,
         });
         draw(id, {
-          tooltip: { trigger: 'axis', confine: true, order: 'valueDesc' },
+          tooltip: {
+            trigger: 'axis', confine: true, order: 'valueDesc',
+            // 不写 valueFormatter 的话，ECharts 会印原始浮点数：
+            // 名义 GDP 成 15,048,971,000,000，人均成 105,521.6193。
+            valueFormatter: C.num,
+          },
           grid: { left: 56, right: 14, top: 12, bottom: 24 },
           xAxis: {
             type: 'category', data: ys, boundaryGap: false,
