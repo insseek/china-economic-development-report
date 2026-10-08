@@ -334,6 +334,14 @@ footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px sol
   footer{ break-before:page; }
 }
 .printfoot{ display:none; font-size:10.5px; color:var(--ink3); margin:2px 0 10px; }
+/* 关键节点对照表：四列。性质并入事件列、说明并入同一行，故不再有表下注释块。 */
+#tblEvents td{vertical-align:top;padding:9px 10px}
+#tblEvents .sc{color:#8b95a3;font-size:11.5px}
+#tblEvents .chg{font-size:12.5px;line-height:1.75}
+#tblEvents .chg .win{color:#8b95a3;font-size:11.5px}
+#tblEvents .chg .mm{margin-top:3px;color:#b45309}
+#tblEvents .chg .cp{margin-top:3px;color:#5a6472}
+#tblEvents .nt{font-size:12.5px;line-height:1.75;color:#5a6472;max-width:430px}
 </style>
 <style>
 /* 版心与主报告一致（1280px）。 */
@@ -703,10 +711,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     if (v === null || v === undefined || Number.isNaN(v)) return '—';
     const a = Math.abs(v);
     // 一律带千分位：人均这类四位数量级（6945.40）没有分隔符很难读。
-    const f = (x, d) => x.toLocaleString('zh-CN',
-      { minimumFractionDigits: d, maximumFractionDigits: d });
-    if (a >= 1e12) return f(v / 1e12, 2) + ' 万亿';
-    if (a >= 1e8) return f(v / 1e8, 2) + ' 亿';
+    const f = (x, d) => x.toLocaleString(
+      'zh-CN',
+      { minimumFractionDigits: d, maximumFractionDigits: d },
+    );
+    if (a >= 1e12) return `${f(v / 1e12, 2)} 万亿`;
+    if (a >= 1e8) return `${f(v / 1e8, 2)} 亿`;
     if (a >= 1e4) return f(v, 0);
     // 占比例的指标（农业占 GDP 之类）一律两位小数——四位、三位都没意义。
     // 只对小于 0.01 的极小值留个下限，否则会显示成 0.00。
@@ -859,7 +869,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         to = i;
       }
     });
-    if (from <= 0 && to === ys.length - 1) return opt;   // 本来就没有多余的头尾
+    if (from <= 0 && to === ys.length - 1) return opt; // 本来就没有多余的头尾
     a0.data = ys.slice(from, to + 1);
     (opt.series || []).forEach((x) => {
       if (Array.isArray(x.data) && x.data.length === ys.length) x.data = x.data.slice(from, to + 1);
@@ -952,7 +962,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   function gdpCtl(hostId, code, onChange) {
     const host = document.getElementById(hostId);
     if (!host) return;
-    host.classList.add('dsh-ctl');   // 与两岸卡共用同一套按钮样式
+    host.classList.add('dsh-ctl'); // 与两岸卡共用同一套按钮样式
     const pos = gdpPos(code);
     // 口径一排不带前缀（只有两档，自身即标签）；视图一排带「视图：」。
     const cals = GDP_CALS.map((c, ci) => `<button class="btn mini${
@@ -1306,11 +1316,11 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
    * 旧的系列不会消失——实测切换两岸视图时，倍数线与人均线同时画在图上。
    * 故先查实例表，有则 setOption(opt, true)（notMerge，丢掉旧系列）。
    */
-  function draw(id, opt) {
+  function draw(id, rawOpt) {
     const host = el(id);
     if (!host) return null;
     // 年份轴裁到数据实际区间（与主报告同一份逻辑）。
-    opt = C.trimYearAxis(opt);
+    const opt = C.trimYearAxis(rawOpt);
     let c = instMap[id];
     if (!c || c.isDisposed()) {
       c = window.echarts.init(host, null, { renderer: 'canvas' });
