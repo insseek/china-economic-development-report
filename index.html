@@ -805,6 +805,36 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     'NY.GDP.PCAP.PP.CD': 'NY.GDP.MKTP.PP.CD',
   };
 
+  /**
+   * 从数据里取**实际有值**的年份区间。
+   *
+   * 为什么需要：x 轴此前按面板年份铺开（1949 或 1960 起），而很多序列要到很晚
+   * 才有值——于是左边一大片空白。有值就画、没值就不画，起止由数据说了算。
+   *
+   * ys 与各 blocks 里每个实体的数组**按位置对齐**。
+   */
+  function dataSpan(ys, blocks, isos) {
+    const list = (isos && isos.length) ? isos : Object.keys((blocks[0]) || {});
+    let from = null;
+    let to = null;
+    ys.forEach((y, i) => {
+      const has = list.some((iso) => blocks.some((b) => {
+        const arr = (b || {})[iso];
+        return arr && arr[i] !== null && arr[i] !== undefined;
+      }));
+      if (has) { if (from === null) from = y; to = y; }
+    });
+    return { from, to };
+  }
+
+  /** 把一个序列数组按 dataSpan 的结果裁齐。 */
+  function sliceSpan(arr, ys, span) {
+    if (!arr || span.from === null) return arr || [];
+    const a = ys.indexOf(span.from);
+    const b = ys.indexOf(span.to);
+    return arr.slice(a, b + 1);
+  }
+
   /** 名次转中文序数：1→一、2→二……12→十二。 */
   function cnNum(n) {
     const d = '一二三四五六七八九十';
@@ -1200,7 +1230,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
     abbr, num, eventMark, EVENTS, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS, cnNum,
-    gdpCross, gdpLead,
+    gdpCross, gdpLead, dataSpan, sliceSpan,
     dressCrossCard,
     CS_VIEWS,
   };
@@ -1389,7 +1419,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     const blk = (D.gdp || {})[gdpCode];
     if (!blk) return;
     // 上界取「真实有数据的年份」：数组里 2026 与 2025 的值逐位相同，是外推。
-    const ys = D.years.filter((y) => y >= D.meta.series_start && y <= (D.gdp_end || D.years[D.years.length - 1]));
+    // 年份按**数据实际有值的区间**取：面板从 1960 起，但各口径的首年不同
+    // （PPP 要到 1990 年代初），照面板铺开左边会留一大片空白。
+    const allYs = D.years.filter((y) => y >= D.meta.series_start
+      && y <= (D.gdp_end || D.years[D.years.length - 1]));
+    const span = C.dataSpan(allYs, [blk.values], MAIN_ENT.map((e) => e.iso));
+    const ys = span.from === null ? allYs : allYs.filter((y) => y >= span.from && y <= span.to);
     const i0 = D.years.indexOf(ys[0]);
     const isos = MAIN_ENT.map((e) => e.iso);
     const byIso = {};
@@ -1519,7 +1554,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
           + `<span class="cdom">${seen[g].map((x) => x.name + (x.scored ? '' : '<span style="color:#8b95a3">（仅参照）</span>')).join(' · ')}</span></div>`).join('');
     }
 
-    const ys = D.years;
+    // 每张小图的年份按**该指标自己有值的区间**取，前面没数据就不画那一段。
+    const allYs = D.years;
     const order2 = []; const
       byGroup = {};
     inds.forEach((x) => {
@@ -1544,12 +1580,17 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         }</h4><p class="meta">${it.unit || ''}　来源：${it.src || '—'}</p>`
           + `<div class="plt" id="${id}"></div>`;
         grid.appendChild(host);
+        const sp = C.dataSpan(allYs, [it.values], MAIN_ENT.map((e) => e.iso));
+        const ys = sp.from === null ? allYs
+          : allYs.filter((y) => y >= sp.from && y <= sp.to);
         const series = MAIN_ENT.filter((e) => e.iso !== 'CHN').map((e) => ({
-          name: e.cn, type: 'line', data: it.values[e.iso], showSymbol: false,
+          name: e.cn, type: 'line', data: C.sliceSpan(it.values[e.iso], allYs, sp),
+          showSymbol: false,
           lineStyle: { width: 1, color: C.INK3, opacity: 0.75 }, itemStyle: { color: C.INK3 },
         }));
         series.push({
-          name: '中国', type: 'line', data: it.values.CHN, showSymbol: false,
+          name: '中国', type: 'line', data: C.sliceSpan(it.values.CHN, allYs, sp),
+          showSymbol: false,
           lineStyle: { width: 2.2, color: ec('CHN') }, itemStyle: { color: ec('CHN') }, z: 5,
         });
         draw(id, {
