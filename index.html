@@ -71,17 +71,29 @@ h3{font-size:16.5px;margin:30px 0 10px;color:var(--ink)}
 .chart.xl{height:620px}
 /* 国家选择器吸顶：整个板块共用这一个，滑到第 8 张卡也够得着。
    照 .viewbar 的模式——顶部导航高约 46px，故 top:46px；z-index 低于它。 */
-.pickRow{position:sticky;top:46px;z-index:39;background:var(--bg);
-  margin:0 0 12px;padding:10px 0;border-bottom:1px solid var(--line)}
-.dsh-pick-label{font-size:12.5px;color:#5a6472;margin-right:6px}
-.dsh-pick-hint{font-size:11.5px;color:#a3adba;margin-left:10px}
+/* ---------- 选择器：全报告一套外观 ---------- */
+/* 容器 .pickRow + 标签 .dsh-pick-label + 按钮 .btn.mini。
+   原先视图栏(.viewbar/.lbl/.btn)、雷达(#radarPick.legend)、
+   吸顶选择器(.pickRow) 各一套，按钮尺寸与标签都不同（作者指出）。 */
+.pickRow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px}
+/* 需要跟着滚动浮动的选择器加 .sticky（目前是领域评分轨迹与重要指标数据）。 */
+/* 左右内边距与 .viewbar 一致（14px 12px 10px）：吸顶时横条的边缘在内容左缘，
+   文字若不留内边距就会贴着自己的横条边（作者发现）。 */
+.pickRow.sticky{position:sticky;top:46px;z-index:39;background:var(--bg);
+  padding:10px 12px;border-bottom:1px solid var(--line)}
+.dsh-pick-label{font-size:12.5px;color:var(--ink2);margin-right:4px}
+.dsh-pick-hint{font-size:11.5px;color:var(--ink3);margin-left:6px}
+/* 视图栏沿用 .lbl 的写法，样式归到同一套 */
+/* 选择器按钮统一为 mini 尺寸：视图栏原先用大一号的 .btn，与选择器不一致 */
+.viewbar .btn{padding:4px 10px;font-size:12px}
 .chartTitle{font-size:14px;font-weight:600;margin:0 0 2px}
 .chartNote{font-size:12.5px;color:var(--ink3);margin:0 0 12px}
 
 /* ---------- view switcher ---------- */
 .viewbar{position:sticky;top:46px;z-index:40;background:var(--bg);padding:14px 12px 10px;
-  display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:8px}
-.viewbar .lbl{font-size:13px;color:var(--ink2);margin-right:4px}
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:8px}
+/* 标签与间距同 .pickRow，选择器全报告一套（作者指出三处不一致） */
+.viewbar .lbl{font-size:12.5px;color:var(--ink2);margin-right:4px}
 .btn{border:1px solid var(--line);background:#fff;color:var(--ink2);padding:6px 14px;
   border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
 .btn:hover{border-color:#c3cbd6;color:var(--ink)}
