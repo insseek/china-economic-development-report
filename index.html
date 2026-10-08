@@ -992,6 +992,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       'letter-spacing:0;line-height:1.4}',
       '.dsh-cs-card .dsh-cs-note{font-size:12.5px;color:var(--ink3);line-height:1.7;',
       'margin:0 0 4px}',
+      // 引言（标题下那三句）。两页各自的 .lead 规则不同——主报告 15px、
+      // 经济页 14px，边距也不一样。不统一的话卡片一致了、引言还差一截。
+      // 用 .lead.dsh-cs-lead 两级类名：两页都引自主模板的 .lead（同等权重），
+      // 而经济页另有 .ec-sec>.lead 更具体。两级才压得住，两页也才一致。
+      '.lead.dsh-cs-lead{font-size:14px;line-height:1.85;color:var(--ink2);',
+      'margin:9px 0 16px}',
       // 按钮区：两页的容器规则不同——主报告 .viewbar 带 14px/12px/10px 内边距、
       // 且是 position:sticky + display:flex，按钮 8px 圆角；经济页 .ec-ctl 无内边距、
       // 按钮 20px 圆角。结果同一排按钮在两页差 21px 高、还会与图重叠。
@@ -1021,9 +1027,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     const card = (title && title.closest('.card,.ec-card'))
       || (host && host.closest('.card,.ec-card'));
     if (card) card.classList.add('dsh-cs-card');
-    [title, document.getElementById(cfg.lead), document.getElementById(cfg.note)]
-      .forEach((n) => { if (n) n.classList.add('dsh-cs-note'); });
-    if (title) { title.classList.remove('dsh-cs-note'); title.classList.add('dsh-cs-title'); }
+    // 引言与图注是两种东西：引言在标题下、字号大些；图注在卡内、更小更浅。
+    const leadEl = document.getElementById(cfg.lead);
+    if (leadEl) leadEl.classList.add('dsh-cs-lead');
+    const noteEl = document.getElementById(cfg.note);
+    if (noteEl) noteEl.classList.add('dsh-cs-note');
+    if (title) title.classList.add('dsh-cs-title');
     const ctl = document.getElementById(cfg.ctl);
     if (ctl) ctl.classList.add('dsh-cs-ctl');
     if (host) host.classList.add('dsh-cs-chart');
