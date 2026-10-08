@@ -709,7 +709,9 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     if (a >= 1e12) return f(v / 1e12, 2) + ' 万亿';
     if (a >= 1e8) return f(v / 1e8, 2) + ' 亿';
     if (a >= 1e4) return f(v, 0);
-    if (a >= 1) return f(v, 2);
+    // 占比例的指标（农业占 GDP 之类）一律两位小数——四位、三位都没意义。
+    // 只对小于 0.01 的极小值留个下限，否则会显示成 0.00。
+    if (a >= 0.01) return f(v, 2);
     return v.toPrecision(3);
   }
 
