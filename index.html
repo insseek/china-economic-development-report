@@ -465,9 +465,9 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
   <!-- ══════════════ 二 ══════════════ -->
   <section class="ec-sec" id="s2">
     <h2><span class="n">二</span>各国 GDP 对比</h2>
-    <p class="lead">同一套口径下，十一个实体的总量与人均。切换口径即可看到不同的问题：
+    <p class="lead">同一套口径下，十个国家的总量与人均。切换口径即可看到不同的问题：
       总量看体量，人均看生活水平。纵轴为对数刻度——跨三个数量级时，线性轴会把小国压在底部看不见。</p>
-    <div class="ec-card">
+    <div class="ec-card dsh-gdp-card">
       <div class="ec-ctl" id="gdpCtl"></div>
       <div id="cGDP" class="ec-chart tall"></div>
       <p class="ec-note" id="gdpNote"></p>
@@ -1014,6 +1014,11 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     const st = document.createElement('style');
     st.id = 'dsh-cs-css';
     st.textContent = [
+      // 「各国 GDP 对比」那张卡：两页的卡片规则不同（主报告 .card 12px 圆角 /
+      // 20px 内边距、经济页 .ec-card 10px / 16px），同一张图装在两个框里高矮不一。
+      // 框统一，标题与图注各留各的——它们服务各自的上下文。
+      '.dsh-gdp-card{background:var(--card);border:1px solid var(--line);',
+      'border-radius:10px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}',
       '.dsh-cs-card{background:var(--card);border:1px solid var(--line);',
       'border-radius:10px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}',
       '.dsh-cs-card .dsh-cs-title{font-size:15px;font-weight:650;margin:0 0 10px;',
