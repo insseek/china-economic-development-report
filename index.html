@@ -469,8 +469,6 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
       总量看体量，人均看生活水平。纵轴为对数刻度——跨三个数量级时，线性轴会把小国压在底部看不见。</p>
     <div class="ec-card dsh-gdp-card">
       <div class="ec-ctl" id="gdpCtl"></div>
-      <!-- 当前口径的说明放在**图之上**：先看选的是哪把尺，再看图。 -->
-      <p class="ec-note" id="gdpNote" style="margin:0 0 8px"></p>
       <div id="cGDP" class="ec-chart tall"></div>
     </div>
   </section>
@@ -1264,16 +1262,6 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     'NY.GDP.MKTP.PP.CD': 'GDP 总量',
     'NY.GDP.PCAP.PP.CD': '人均 GDP',
   };
-  // 当前口径的说明（照搬主报告的措辞；「本报告」改为「本页」，这页是独立的）
-  const GDP_NOTE = {
-    'NY.GDP.MKTP.CD': '当前口径：<b>名义美元</b>。2010 年中国首次超过日本，居世界第二。',
-    'NY.GDP.MKTP.PP.CD': '当前口径：<b>购买力平价</b>。该口径下中国超过日本更早。'
-      + '两个口径的年份不同，各自成立、不可混用。',
-    'NY.GDP.PCAP.CD': '当前口径：<b>人均 GDP（名义美元）</b>。名义值受汇率影响较大，'
-      + '与下一口径不可直接比较。',
-    'NY.GDP.PCAP.PP.CD': '当前口径：<b>人均 GDP（购买力平价）</b>。反映实际购买力水平，'
-      + '不受汇率波动影响。',
-  };
 
   function renderGDPCtl() {
     const host = el('gdpCtl');
@@ -1344,17 +1332,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       },
       series,
     });
-    const n = el('gdpNote');
-    if (n) {
-      const ax = blk.axis === 'log'
-        ? '　<span style="color:#8b95a3">（纵轴为对数刻度，否则中美与其他实体无法同图比较）</span>'
-        : '　<span style="color:#8b95a3">（纵轴为线性刻度）</span>';
-      // 只留当前口径那一句 + 纵轴说明。原先还跟了一句「数据自 X 到 Y 止…」，
-      // 与卡片下方另一段说的是同一件事，重复了。
-      n.innerHTML = (GDP_NOTE[gdpCode] || '') + ax;
-    }
   }
-
   /* ─────────────── 三 · 经济与产业 ─────────────── */
 
   /** 该领域综合评分的时间轨迹：中国 + 其余九国。 */
