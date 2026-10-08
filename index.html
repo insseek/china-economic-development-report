@@ -934,6 +934,27 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         series,
       });
 
+      // 标题下那三句。**由数据算出来**，不写死——数据更新它自己就跟着变。
+      // 措辞依作者：第一句说明这是同源对照；第二句是 GDP 口径，**不写「名义」**——
+      // 通常说的 GDP 就是现价 GDP，国家统计局公布的也是它；第三句才点名 PPP，
+      // 那才是需要特别说明的那把尺。两页共用这一份，免得一边改了另一边没改。
+      const lead = cfg.lead && document.getElementById(cfg.lead);
+      if (lead) {
+        const line = (B, prefix) => {
+          if (!B || !B.years || B.years.length < 2) return '';
+          const y0 = B.years[0];
+          const y1 = B.years[B.years.length - 1];
+          return `${prefix}${y0} 年，台湾地区人均 GDP 是中国大陆的 <b>${
+            B.pc_ratio[0].toFixed(1)} 倍</b>；${y1} 年缩小到 <b>${
+            B.pc_ratio[B.pc_ratio.length - 1].toFixed(1)} 倍</b>。`;
+        };
+        lead.innerHTML = [
+          '同一套数据源下的两岸对照。',
+          line(cals.nominal, ''),
+          line(cals.ppp, '按 PPP（购买力平价），'),
+        ].filter(Boolean).join('<br>');
+      }
+
       // 标题：两页都由这里写，否则各写各的必然不一致；年份也随口径变
       // （PPP 一套 1950–2022、名义美元一套 1980–2025），写死就对不上了。
       const t = cfg.title && document.getElementById(cfg.title);
@@ -1494,40 +1515,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   function renderCross() {
     C.crossStrait({
       data: D.cross || {},
-      host: 'cCross', ctl: 'crossCtl', title: 'crossTitle',
+      host: 'cCross', ctl: 'crossCtl', title: 'crossTitle', lead: 's4lead',
       draw,
       colors: { chn: ec('CHN'), twn: ec('TWN') },
     });
-    renderCrossLead();
   }
 
-  /**
-     * 标题下那三句。**全部由数据算出来**，不写死——数据一更新它自己就跟着变。
-     *
-     * 措辞依作者：第一句说明这是同源对照；第二句是 GDP 口径，**不写「名义」**——
-     * 通常说的 GDP 就是现价 GDP，国家统计局公布的也是它，不必强调；
-     * 第三句才点名 PPP，因为那才是需要特别说明的那把尺。
-     */
-  function renderCrossLead() {
-    const host = el('s4lead');
-    if (!host) return;
-    // 变量名不能用 C——模块级已有一个 C = window.DSHChart（共享样式层），
-    // 这里再声明一个 C 会把它盖住。此前两岸图空白就是栽在这个遮蔽上。
-    const CAL = (D.cross || {}).calibers || {};
-    const line = (B, prefix) => {
-      if (!B || !B.years || B.years.length < 2) return '';
-      const y0 = B.years[0];
-      const y1 = B.years[B.years.length - 1];
-      return `${prefix}${y0} 年，台湾地区人均 GDP 是中国大陆的 <b>${
-        B.pc_ratio[0].toFixed(1)} 倍</b>；${y1} 年缩小到 <b>${
-        B.pc_ratio[B.pc_ratio.length - 1].toFixed(1)} 倍</b>。`;
-    };
-    host.innerHTML = [
-      '同一套数据源下的两岸对照。',
-      line(CAL.nominal, ''),
-      line(CAL.ppp, '按 PPP（购买力平价），'),
-    ].filter(Boolean).join('<br>');
-  }
   function renderNodes() {
     const t = el('tNodes');
     if (!t) return;
