@@ -818,14 +818,17 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   function gdpCtl(hostId, code, onChange) {
     const host = document.getElementById(hostId);
     if (!host) return;
+    host.classList.add('dsh-ctl');   // 与两岸卡共用同一套按钮样式
     const pos = gdpPos(code);
     // 口径一排不带前缀（只有两档，自身即标签）；视图一排带「视图：」。
     const cals = GDP_CALS.map((c, ci) => `<button class="btn mini${
       ci === pos.cal ? ' on' : ''}" data-cal="${ci}">${c.label}</button>`).join('');
     const views = GDP_VIEWS.map((v, vi) => `<button class="btn mini${
       vi === pos.view ? ' on' : ''}" data-view="${vi}">${v}</button>`).join('');
-    host.innerHTML = `<div style="padding:8px 0 2px">${cals}</div>`
-      + `<div style="padding:2px 0 8px"><span class="lbl">视图：</span>${views}</div>`;
+    // **一排**，与两岸那张完全同构：口径按钮 → 「视图：」标签 → 视图按钮。
+    // （此前分两排，比两岸那张高出一行，看着不齐。）
+    host.innerHTML = `<div>${cals}<span class="lbl" style="margin-left:14px">视图：</span>`
+      + `${views}</div>`;
     host.querySelectorAll('button[data-cal]').forEach((b) => {
       b.addEventListener('click', () => {
         onChange(GDP_CALS[Number(b.dataset.cal)].codes[gdpPos(code).view]);
@@ -1076,23 +1079,27 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       // 而经济页另有 .ec-sec>.lead 更具体。两级才压得住，两页也才一致。
       '.lead.dsh-cs-lead{font-size:14px;line-height:1.85;color:var(--ink2);',
       'margin:9px 0 16px}',
-      // 按钮区：两页的容器规则不同——主报告 .viewbar 带 14px/12px/10px 内边距、
+      // 按钮区（两岸卡与 GDP 卡共用这一套，作者要求复用）
+      // 两页的容器规则不同——主报告 .viewbar 带 14px/12px/10px 内边距、
       // 且是 position:sticky + display:flex，按钮 8px 圆角；经济页 .ec-ctl 无内边距、
       // 按钮 20px 圆角。结果同一排按钮在两页差 21px 高、还会与图重叠。
       // 故把容器与按钮一并按经济页那套定死（作者指定以经济页为标准）。
       // 图高也由这里定：两页原本一个 420px、一个 520px（.chart / .ec-chart.tall），
       // 卡片高度就跟着差一截。
       '.dsh-cs-card .dsh-cs-chart{height:460px;width:100%}',
-      '.dsh-cs-card .dsh-cs-ctl{display:block;position:static;top:auto;padding:0;',
+      '.dsh-cs-card .dsh-ctl,.dsh-gdp-card .dsh-ctl{display:block;position:static;',
+      'top:auto;padding:0;',
       'margin:10px 0 6px;background:none;border:0;box-shadow:none;gap:0;z-index:auto}',
-      '.dsh-cs-card .dsh-cs-ctl>div{display:flex;align-items:center;flex-wrap:wrap;',
+      '.dsh-cs-card .dsh-ctl>div,.dsh-gdp-card .dsh-ctl>div{display:flex;align-items:center;',
+      'flex-wrap:wrap;',
       'gap:8px;padding:0;margin:0}',
-      '.dsh-cs-card .dsh-cs-ctl button{font:inherit;font-size:12.5px;padding:4px 12px;',
+      '.dsh-cs-card .dsh-ctl button,.dsh-gdp-card .dsh-ctl button{font:inherit;',
+      'font-size:12.5px;padding:4px 12px;',
       'border-radius:20px;border:1px solid var(--line);background:var(--card);',
       'color:var(--ink2);cursor:pointer;line-height:1.5;font-weight:400}',
-      '.dsh-cs-card .dsh-cs-ctl button.on{background:var(--ink);color:#fff;',
+      '.dsh-cs-card .dsh-ctl button.on,.dsh-gdp-card .dsh-ctl button.on{background:var(--ink);color:#fff;',
       'border-color:var(--ink);font-weight:600}',
-      '.dsh-cs-card .dsh-cs-ctl .lbl{font-size:12.5px;color:var(--ink3);',
+      '.dsh-cs-card .dsh-ctl .lbl,.dsh-gdp-card .dsh-ctl .lbl{font-size:12.5px;color:var(--ink3);',
       'align-self:center;margin:0;margin-right:4px}',
     ].join('');
     document.head.appendChild(st);
@@ -1112,7 +1119,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     if (noteEl) noteEl.classList.add('dsh-cs-note');
     if (title) title.classList.add('dsh-cs-title');
     const ctl = document.getElementById(cfg.ctl);
-    if (ctl) ctl.classList.add('dsh-cs-ctl');
+    if (ctl) ctl.classList.add('dsh-ctl');
     if (host) host.classList.add('dsh-cs-chart');
   }
 
