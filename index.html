@@ -552,9 +552,10 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
          若让卡片既带 16px 内边距、又当滚动容器，sticky 表头会贴在内边距框上，
          它上方那 16px 的带子里会露出滚过去的行——实测就是这个问题。 -->
     <div class="ec-card">
-      <div style="overflow:auto;max-height:640px">
-        <table class="ec-tbl" id="tEvents"></table>
-      </div>
+      <!-- 与主报告那张表**同一套结构**：外层 .tblwrap 承担滚动（表头 sticky 才贴得住），
+           表格用主报告的默认样式，不用 .ec-tbl。作者要求两张表除变化列外完全一致。 -->
+      <div class="tblwrap" style="max-height:760px"><table id="tEvents"></table></div>
+      <p class="chartNote" style="margin-top:10px" id="eventStats"></p>
     </div>
     <div class="ec-warn" id="calWarn"></div>
   </section>
@@ -752,6 +753,56 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     if (a >= 1) return f(v, 2);
     if (a >= 0.01) return f(v, 4);
     return String(Number(v.toPrecision(3)));
+  }
+
+  // 历史大事件表的事件性质与颜色——两个报告共用一套。
+  const SIGN_NAME = { pos: '正向', neg: '负向', neutral: '中性' };
+  const SIGN_COLOR = { pos: '#0f7b4f', neg: '#b45309', neutral: '#8b95a3' };
+
+  /**
+   * 历史大事件表的**行 HTML 与统计**——治理报告与经济页共用这一份。
+   *
+   * 两张表除「变化」那一列的内容外必须完全一致（作者要求），所以格式只写在这里：
+   * 年份加粗、事件列的名字加粗 + 性质药丸 + 「全球性／中国特定」副行、
+   * 变化格顶部印窗口、说明列把 Markdown 的 **粗体** 转成 <b>。
+   *
+   * 唯一可变的是**变化格**：由调用方给 midHTML(r) 返回该格的内容
+   * （治理报告给「综合评分 + 各领域明细」，经济页给「GDP/PPP 总量与人均 + 经济产业评分」）。
+   * midHTML 返回空串时，这一格整个留空——与治理报告原来的行为一致。
+   *
+   * 返回 { html, tot, ok, bad, neu }；统计口径：所有 delta≠0 的领域映射都计入。
+   */
+  function eventTableRows(rows, midHTML) {
+    let tot = 0; let ok = 0; let bad = 0; let neu = 0;
+    const html = (rows || []).map((r) => {
+      (r.detail || []).forEach((d) => {
+        if (d.delta === 0) return;
+        tot++;
+        if (d.match === true) ok++; else if (d.match === false) bad++; else neu++;
+      });
+      const col = SIGN_COLOR[r.sign] || '#8b95a3';
+      const mid = midHTML(r) || '';
+      const chgCell = mid ? `<td class="chg">${mid}</td>` : '<td class="chg"></td>';
+      // 说明里用的是 Markdown 的 **粗体**，直接塞进 HTML 会原样印出星号。
+      const note = (r.note || '—').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+      return `<tr><td><b>${r.span}</b></td><td><b>${r.name}</b> `
+        + `<span class="pill" style="background:${col}22;color:${col}">${SIGN_NAME[r.sign]}</span>`
+        + `<br/><span class="sc">${r.scope === 'cn' ? '中国特定' : '全球性'}</span></td>`
+        + `${chgCell}<td class="nt">${note}</td></tr>`;
+    }).join('');
+    return { html, tot, ok, bad, neu };
+  }
+
+  /** 统计行文案——两个报告共用（同一套口径与措辞）。 */
+  function eventStatsHTML(n, c) {
+    const judged = c.ok + c.bad;
+    const pct = (x) => (judged ? Math.round((x / judged) * 100) : 0);
+    return `共 ${n} 个事件、${c.tot} 条领域映射：其中可判断的 ${judged} 条 —— `
+      + `<b style='color:#0f7b4f'>吻合 ${c.ok} 条（${pct(c.ok)}%）</b>、`
+      + `<b style='color:#b45309'>不符 ${c.bad} 条（${pct(c.bad)}%）</b>；`
+      + `另有 ${c.neu} 条为中性事件，不参与判断。`
+      + '<br><b>不符不等于数据错误</b>——多数是「事件的全球性质」与「对中国的实际影响」不一致，'
+      + '例如石油危机、全球金融危机、COVID-19 对中国均未呈负向。';
   }
 
   /**
@@ -1419,6 +1470,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     card,
     picker,
     eventChangeHTML,
+    eventTableRows,
+    eventStatsHTML,
     seriesTip,
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
@@ -1932,64 +1985,52 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   function renderEvents() {
     const t = el('tEvents');
     if (!t) return;
-    const SIGN = { pos: '正向', neg: '负向', neutral: '中性' };
-    const SIGN_COLOR = { pos: '#0f7b4f', neg: '#b45309', neutral: '#8b95a3' };
-    const { num, eventChangeHTML } = window.DSHChart;
+    const { num, eventTableRows, eventStatsHTML, eventChangeHTML } = window.DSHChart;
+    const rows = D.event_table || [];
     const fmt = (x) => (x === null || x === undefined ? '—' : num(x));
-    const rows = (D.event_table || []).map((r) => {
+    // 变化格的内容：该事件那一年的中国经济总量（名义与购买力平价、总量与人均），
+    // 再给经济与产业领域的评分变化——该年没有评分就不列这一行。
+    // 行与统计的格式在 charts.js 的共享函数里，与治理报告那张表**同一份代码**，
+    // 所以除这一格内容外两张表完全一致（作者要求）。
+    const mid = (r) => {
       const g = r.gdp || {};
       const ranks = r.ranks || {};
-      // 该年有全球排名才带上；没有就不写「排名」（作者定：没有排名不显示）
+      // 该年有全球排名才带上；没有就不写「排名」（作者：没有排名不显示）
       const rk = (x, code) => {
         const c = ranks[code];
         return (c && c.rank) ? `${fmt(x)}，排名 ${c.rank}` : fmt(x);
       };
-      const parts = [];
+      const out = [];
       if (g.nominal_total !== null || g.nominal_pc !== null) {
-        const tot = rk(g.nominal_total, 'NY.GDP.MKTP.CD');
-        const pc = rk(g.nominal_pc, 'NY.GDP.PCAP.CD');
-        parts.push(`GDP：总量 ${tot}；人均 ${pc}。`);
+        const a = rk(g.nominal_total, 'NY.GDP.MKTP.CD');
+        const b = rk(g.nominal_pc, 'NY.GDP.PCAP.CD');
+        out.push(`<div class="dl">GDP：总量 ${a}；人均 ${b}。</div>`);
       }
       if (g.ppp_total !== null || g.ppp_pc !== null) {
-        const tot = rk(g.ppp_total, 'NY.GDP.MKTP.PP.CD');
-        const pc = rk(g.ppp_pc, 'NY.GDP.PCAP.PP.CD');
-        parts.push(`PPP GDP：总量 ${tot}；人均 ${pc}。`);
+        const a = rk(g.ppp_total, 'NY.GDP.MKTP.PP.CD');
+        const b = rk(g.ppp_pc, 'NY.GDP.PCAP.PP.CD');
+        out.push(`<div class="dl">PPP GDP：总量 ${a}；人均 ${b}。</div>`);
       }
       if (r.econ) {
-        // 复用主报告「评分变化」的格式（charts.js 的共享函数），去掉外层 div
-        // 只要数值本身：去掉外层的 div、去掉「↑吻合／≠不符」标签、去掉领域名
-        // ——这一行已经写着「经济产业评分：」，再重复一遍领域名与判定标签是冗余
-        // （作者给的写法就是「经济产业评分：35.4 → 谷 33.8→39.2 +3.8」）。
+        // 复用主报告的「评分变化」格式，去掉判定药丸与领域名——这一行已写
+        // 「经济产业评分：」（作者给的写法就是纯数值）
         const chg = eventChangeHTML(r.econ, r.sign)
           .replace(/^<div class="dl">/, '')
           .replace(/<span class="pill[^>]*>[^<]*<\/span>/, '')
           .replace(new RegExp(`^\\s*${r.econ.dom}\\s*`), '')
-          .replace(/\s[↑↓→]\s(?=<b>)/, ' ') // 净额前的方向箭头（主报告格式才有）
+          .replace(/\s[↑↓→]\s(?=<b>)/, ' ')
           .replace(/<\/div>$/, '');
-        parts.push(`经济产业评分：${chg}`);
+        out.push(`<div class="dl">经济产业评分：${chg}</div>`);
       }
-      const col = SIGN_COLOR[r.sign] || '#8b95a3';
-      const nameCell = `${r.name}<div style="color:${col};font-size:12px;`
-        + `margin-top:2px">${SIGN[r.sign] || ''}</div>`;
-      const chgCell = `<td style="font-size:12.5px;line-height:1.75">${parts.join('')}</td>`;
-      const noteCell = `<td style="font-size:12.5px;line-height:1.75;color:#5a6472">${r.note || ''}</td>`;
-      return `<tr><td class="y">${r.span || r.year}</td><td>${nameCell}</td>${chgCell}${noteCell}</tr>`;
-    }).join('');
-    const head = [
-      '<thead><tr>',
-      '<th style="width:96px">年份</th>',
-      '<th style="width:190px">事件</th>',
-      '<th>经济总量及综合评分变化</th>',
-      '<th>说明</th>',
-      '</tr></thead>',
-    ].join('');
-    t.innerHTML = `${head}<tbody>${rows}</tbody>`;
-    const lead = el('s6lead');
-    if (lead) {
-      lead.innerHTML = '这张表把报告里用到的历史大事件汇总起来。'
-        + '每格先给该事件那一年的<b>中国经济总量</b>（名义与购买力平价、总量与人均），'
-        + '再给<b>经济与产业领域的评分变化</b>——该年没有评分就不列这一行。';
-    }
+      if (!out.length) return '';
+      return `<div class="win">${r.window}</div>${out.join('')}`;
+    };
+    const res = eventTableRows(rows, mid);
+    t.innerHTML = '<thead><tr>'
+      + '<th style="width:104px">年份</th><th style="width:190px">事件</th>'
+      + '<th>经济总量及综合评分变化</th><th>说明</th>'
+      + `</tr></thead><tbody>${res.html}</tbody>`;
+    if (el('eventStats')) el('eventStats').innerHTML = eventStatsHTML(rows.length, res);
   }
 
   /* ───────────────────── 七 · 一种解释（作者分析） ───────────────────── */
