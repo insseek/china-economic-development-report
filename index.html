@@ -508,8 +508,8 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
     <!-- 长序列人均 GDP（麦迪逊 1820–2022）。**单独一张卡、单独一个源**：
          上面那张是世行现价美元（1960 起），这张是不变价 PPP（2011 国际元，1820 起），
          两把尺合不到一张图上——合起来会读出不存在的交叉。主报告不加这张图。 -->
-    <div class="ec-card">
-      <h3>长序列 不变价–购买力平价（PPP）GDP：1820–2022</h3>
+    <div class="ec-card dsh-gdp-card">
+      <h3>不变价–购买力平价（PPP）GDP：1820–2022</h3>
       <!-- 视图按钮与「各国 GDP 对比」口径栏同格式（.ec-ctl + .btn.mini）。
            年份到 **2022**：Maddison 2023 的数据止于 2022，不是我们不画到 2026。 -->
       <div class="ec-ctl" id="maddCtl"></div>
@@ -1401,29 +1401,49 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
    * 画这排按钮。onChange(新代码) 由各页自己接——两页的着色与绘图逻辑不同。
    * hostId 两页都叫 gdpCtl。
    */
+  /**
+   * 控件条：一排「标签：按钮… 标签：按钮…」。
+   *
+   * **三处选择器共用这一份写法**——「各国 GDP 对比」的口径/视图、两岸那张的
+   * 口径/视图、经济页长序列图的视图。此前这三处各自手写了一遍同样的 markup，
+   * 结果长序列那张忘了给容器加 `dsh-ctl`（样式全挂在那儿），
+   * 标签显示成 15px 黑、整排变 block —— 手抄 class 名就会出这种错。
+   *
+   * groups: [{ label, items: [{ key, text, on }], gap }]；
+   * onPick(key)：点击时回调，key 由调用方自己解释（带前缀，如 'cal:0'）。
+   */
+  function ctlRow(host, groups, onPick) {
+    const el = typeof host === 'string' ? document.getElementById(host) : host;
+    if (!el) return;
+    el.classList.add('dsh-ctl'); // 样式只在 .dsh-ctl 这一处定义
+    const parts = [];
+    groups.forEach((g) => {
+      parts.push(`<span class="lbl"${g.gap ? ` style="margin-left:${g.gap}px"` : ''}>${g.label}</span>`);
+      parts.push(g.items.map((it) => (
+        `<button class="btn mini${it.on ? ' on' : ''}" data-k="${it.key}">${it.text}</button>`
+      )).join(''));
+    });
+    el.innerHTML = `<div>${parts.join('')}</div>`;
+    el.querySelectorAll('button[data-k]').forEach((b) => {
+      b.addEventListener('click', () => onPick(b.dataset.k));
+    });
+  }
+
   function gdpCtl(hostId, code, onChange) {
-    const host = document.getElementById(hostId);
-    if (!host) return;
-    host.classList.add('dsh-ctl'); // 与两岸卡共用同一套按钮样式
     const pos = gdpPos(code);
     // 口径一排不带前缀（只有两档，自身即标签）；视图一排带「视图：」。
-    const cals = GDP_CALS.map((c, ci) => `<button class="btn mini${
-      ci === pos.cal ? ' on' : ''}" data-cal="${ci}">${c.label}</button>`).join('');
-    const views = GDP_VIEWS.map((v, vi) => `<button class="btn mini${
-      vi === pos.view ? ' on' : ''}" data-view="${vi}">${v}</button>`).join('');
     // **一排**，与两岸那张完全同构：口径按钮 → 「视图：」标签 → 视图按钮。
-    // （此前分两排，比两岸那张高出一行，看着不齐。）
-    host.innerHTML = `<div><span class="lbl">口径：</span>${cals}`
-      + `<span class="lbl" style="margin-left:14px">视图：</span>${views}</div>`;
-    host.querySelectorAll('button[data-cal]').forEach((b) => {
-      b.addEventListener('click', () => {
-        onChange(GDP_CALS[Number(b.dataset.cal)].codes[gdpPos(code).view]);
-      });
-    });
-    host.querySelectorAll('button[data-view]').forEach((b) => {
-      b.addEventListener('click', () => {
-        onChange(GDP_CALS[gdpPos(code).cal].codes[Number(b.dataset.view)]);
-      });
+    const calItems = GDP_CALS.map((c, ci) => ({ key: `cal:${ci}`, text: c.label, on: ci === pos.cal }));
+    const viewItems = GDP_VIEWS.map((v, vi) => ({ key: `view:${vi}`, text: v, on: vi === pos.view }));
+    ctlRow(hostId, [
+      { label: '口径：', items: calItems },
+      { label: '视图：', gap: 14, items: viewItems },
+    ], (k) => {
+      const [kind, idx] = k.split(':');
+      const n = Number(idx);
+      onChange(kind === 'cal'
+        ? GDP_CALS[n].codes[gdpPos(code).view]
+        : GDP_CALS[gdpPos(code).cal].codes[n]);
     });
   }
 
@@ -1438,25 +1458,21 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     function block() { return cals[cal]; }
 
     function buildCtl() {
-      const host = cfg.ctl && document.getElementById(cfg.ctl);
-      if (!host) return;
       // **一行**，与「各国 GDP 对比」那张图的口径栏同格式：
       //   口径：购买力平价（PPP） 名义美元 视图：GDP 总量 人均 GDP …
-      // 此前排成两行（口径一行、视图一行），与另一张图的按钮栏不一致。
-      const parts = [];
+      // 与另两处选择器共用 ctlRow，不再各写一遍 markup。
+      const groups = [];
       if (Object.keys(cals).length > 1) {
-        parts.push(`<span class="lbl">口径：</span>${Object.keys(cals).map((k) => `<button class="btn mini${k === cal ? ' on' : ''}" data-ccal="${k
-        }">${CS_CAL_LABEL[k] || k}</button>`).join('')}`);
+        const calItems = Object.keys(cals).map((k) => (
+          { key: `ccal:${k}`, text: CS_CAL_LABEL[k] || k, on: k === cal }));
+        groups.push({ label: '口径：', items: calItems });
       }
-      parts.push(`<span class="lbl" style="margin-left:14px">视图：</span>${
-        Object.keys(CS_VIEWS).map((k) => `<button class="btn mini${k === view ? ' on' : ''}" data-cs="${k
-        }">${CS_VIEWS[k].label}</button>`).join('')}`);
-      host.innerHTML = `<div>${parts.join('')}</div>`;
-      host.querySelectorAll('button[data-ccal]').forEach((b) => {
-        b.addEventListener('click', () => { setCal(b.dataset.ccal); });
-      });
-      host.querySelectorAll('button[data-cs]').forEach((b) => {
-        b.addEventListener('click', () => { setView(b.dataset.cs); });
+      const viewItems = Object.keys(CS_VIEWS).map((k) => (
+        { key: `cs:${k}`, text: CS_VIEWS[k].label, on: k === view }));
+      groups.push({ label: '视图：', gap: 14, items: viewItems });
+      ctlRow(cfg.ctl, groups, (k) => {
+        if (k.startsWith('ccal:')) setCal(k.slice(5));
+        else setView(k.slice(3));
       });
     }
 
@@ -1732,7 +1748,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     colorOf, axisStyle, axis, tip,
     legendCfg, baseGrid, gridWithAxisName,
     abbr, eventMark, setMarkEvents, crossStrait, gdpCtl, GDP_CALS, GDP_VIEWS, cnNum,
-    gdpCross, gdpLead, dataSpan, sliceSpan, trimYearAxis, setRealEnd,
+    gdpCross, gdpLead, dataSpan, sliceSpan, trimYearAxis, setRealEnd, ctlRow,
     dressCrossCard,
     CS_VIEWS,
   };
@@ -1978,19 +1994,16 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   let maddView = 'pc';
 
   function renderMaddCtl() {
-    const host = el('maddCtl');
-    if (!host) return;
-    const items = [['pc', '人均 GDP'], ['total', 'GDP 总量']];
-    host.innerHTML = `<div><span class="lbl">视图：</span>${items.map(([k, t]) => (
-      `<button class="btn mini${k === maddView ? ' on' : ''}" data-mv="${k}">${t}</button>`
-    )).join('')}</div>`;
-    host.querySelectorAll('button[data-mv]').forEach((b) => {
-      b.addEventListener('click', () => {
-        if (b.dataset.mv === maddView) return;
-        maddView = b.dataset.mv;
-        renderMaddCtl();
-        renderMaddison();
-      });
+    // 用共享的 ctlRow（与「各国 GDP 对比」口径栏、两岸那张同一份写法）——
+    // 此前这里手写了一遍 markup，忘了 dsh-ctl 类，样式就挂了。
+    const items = [['pc', '人均 GDP'], ['total', 'GDP 总量']].map(([k, t]) => (
+      { key: `mv:${k}`, text: t, on: k === maddView }));
+    C.ctlRow('maddCtl', [{ label: '视图：', items }], (k) => {
+      const v = k.slice(3);
+      if (v === maddView) return;
+      maddView = v;
+      renderMaddCtl();
+      renderMaddison();
     });
   }
 
