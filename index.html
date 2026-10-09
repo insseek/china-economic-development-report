@@ -766,7 +766,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
    * 年份加粗、事件列的名字加粗 + 性质药丸 + 「全球性／中国特定」副行、
    * 变化格顶部印窗口、说明列把 Markdown 的 **粗体** 转成 <b>。
    *
-   * 唯一可变的是**变化格**：由调用方给 midHTML(r) 返回该格的内容
+   * 唯一可变的是**变化格里、年份间隔下方的那几行数据**：
+   * 由调用方给 midHTML(r) 返回；年份间隔那一行由本函数自己输出
    * （治理报告给「综合评分 + 各领域明细」，经济页给「GDP/PPP 总量与人均 + 经济产业评分」）。
    * midHTML 返回空串时，这一格整个留空——与治理报告原来的行为一致。
    *
@@ -781,8 +782,12 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         if (d.match === true) ok++; else if (d.match === false) bad++; else neu++;
       });
       const col = SIGN_COLOR[r.sign] || '#8b95a3';
-      const mid = midHTML(r) || '';
-      const chgCell = mid ? `<td class="chg">${mid}</td>` : '<td class="chg"></td>';
+      // 年份间隔（窗口）那一行由**这里**输出——两个报告都一样，不该让调用方各写一遍。
+      // midHTML 只负责间隔**下方**的数据行；返回空串则整格留空（与治理报告原行为一致）。
+      const body = midHTML(r) || '';
+      const chgCell = body
+        ? `<td class="chg"><div class="win">${r.window}</div>${body}</td>`
+        : '<td class="chg"></td>';
       // 说明里用的是 Markdown 的 **粗体**，直接塞进 HTML 会原样印出星号。
       const note = (r.note || '—').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
       return `<tr><td><b>${r.span}</b></td><td><b>${r.name}</b> `
@@ -2034,7 +2039,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         .map((c) => `<div class="dl">${c.dom}：${plainChange(c, r.sign, num)}</div>`);
       if (r.econ) out.push(`<div class="dl">经济产业评分：${plainChange(r.econ, r.sign, num)}</div>`);
       if (!out.length) return '';
-      return `<div class="win">${r.window}</div>${out.join('')}`;
+      // 年份间隔那一行由共享渲染器输出，这里只给间隔下方的数据
+      return out.join('');
     };
     renderEventTable({
       table: 'tEvents',
