@@ -819,7 +819,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       + `<th>${cfg.midTitle}</th><th>说明</th>`
       + `</tr></thead><tbody>${res.html}</tbody>`;
     const s = document.getElementById(cfg.stats);
-    if (s) s.innerHTML = eventStatsHTML(rows.length, res);
+    if (s) s.innerHTML = eventStatsHTML(rows.length, res, cfg.showCounts);
   }
 
   /**
@@ -835,15 +835,23 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       .replace(/<\/div>$/, '');
   }
 
-  /** 统计行文案——两个报告共用（同一套口径与措辞）。 */
-  function eventStatsHTML(n, c) {
+  /**
+   * 统计行文案——两个报告共用（同一套口径与措辞）。
+   *
+   * withCounts 传 false 时**不印**「共 N 个事件、M 条领域映射…吻合/不符…」那一句
+   * （作者要求）：经济页那张表只列 GDP 与经济产业评分，不显示吻合/不符判定，
+   * 印一串按**全部**领域映射算出来的计数会让人对不上号。后面解释不符的那句照留。
+   */
+  function eventStatsHTML(n, c, withCounts) {
     const judged = c.ok + c.bad;
     const pct = (x) => (judged ? Math.round((x / judged) * 100) : 0);
-    return `共 ${n} 个事件、${c.tot} 条领域映射：其中可判断的 ${judged} 条 —— `
+    const counts = (withCounts === false) ? '' : `共 ${n} 个事件、${c.tot} 条领域映射：`
+      + `其中可判断的 ${judged} 条 —— `
       + `<b style='color:#0f7b4f'>吻合 ${c.ok} 条（${pct(c.ok)}%）</b>、`
       + `<b style='color:#b45309'>不符 ${c.bad} 条（${pct(c.bad)}%）</b>；`
-      + `另有 ${c.neu} 条为中性事件，不参与判断。`
-      + '<br><b>不符不等于数据错误</b>——多数是「事件的全球性质」与「对中国的实际影响」不一致，'
+      + `另有 ${c.neu} 条为中性事件，不参与判断。<br>`;
+    return counts
+      + '<b>不符不等于数据错误</b>——多数是「事件的全球性质」与「对中国的实际影响」不一致，'
       + '例如石油危机、全球金融危机、COVID-19 对中国均未呈负向。';
   }
 
@@ -2047,6 +2055,9 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       stats: 'eventStats',
       rows: D.event_table,
       midTitle: 'GDP及经济产业综合评分变化',
+      // 不印「共 N 个事件、M 条领域映射…吻合/不符…」那句：本表只列 GDP 与经济产业
+      // 评分，不显示吻合/不符判定，那串按全部领域算的计数会让人对不上号（作者要求）。
+      showCounts: false,
       mid,
     });
   }
