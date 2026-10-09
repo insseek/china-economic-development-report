@@ -355,14 +355,14 @@ footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px sol
 }
 .printfoot{ display:none; font-size:10.5px; color:var(--ink3); margin:2px 0 10px; }
 /* 历史大事件表：四列。性质并入事件列、说明并入同一行，故不再有表下注释块。 */
-#tblEvents td{vertical-align:top;padding:9px 10px}
-#tblEvents td:first-child{white-space:nowrap}
-#tblEvents .sc{color:#8b95a3;font-size:11.5px}
-#tblEvents .chg{font-size:12.5px;line-height:1.75}
-#tblEvents .chg .win{color:#8b95a3;font-size:11.5px}
-#tblEvents .chg .dl{margin-top:3px}
+.evtTbl td{vertical-align:top;padding:9px 10px}
+.evtTbl td:first-child{white-space:nowrap}
+.evtTbl .sc{color:#8b95a3;font-size:11.5px}
+.evtTbl .chg{font-size:12.5px;line-height:1.75}
+.evtTbl .chg .win{color:#8b95a3;font-size:11.5px}
+.evtTbl .chg .dl{margin-top:3px}
 
-#tblEvents .nt{font-size:12.5px;line-height:1.75;color:#5a6472;max-width:430px}
+.evtTbl .nt{font-size:12.5px;line-height:1.75;color:#5a6472;max-width:430px}
 </style>
 <style>
 /* 版心与主报告一致（1280px）。 */
@@ -554,7 +554,7 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
     <div class="ec-card">
       <!-- 与主报告那张表**同一套结构**：外层 .tblwrap 承担滚动（表头 sticky 才贴得住），
            表格用主报告的默认样式，不用 .ec-tbl。作者要求两张表除变化列外完全一致。 -->
-      <div class="tblwrap" style="max-height:760px"><table id="tEvents"></table></div>
+      <div class="tblwrap" style="max-height:760px"><table id="tEvents" class="evtTbl"></table></div>
       <p class="chartNote" style="margin-top:10px" id="eventStats"></p>
     </div>
     <div class="ec-warn" id="calWarn"></div>
@@ -791,6 +791,43 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
         + `${chgCell}<td class="nt">${note}</td></tr>`;
     }).join('');
     return { html, tot, ok, bad, neu };
+  }
+
+  /**
+   * 渲染**整张**历史大事件表——表头 + 表体 + 统计行，两个报告共用这一个出口。
+   *
+   * 此前表头是两处各写一遍（治理报告写死在 template.html、经济页在 JS 里重抄，
+   * 连列宽 104px／190px 都抄了两份），作者指出这不算复用。
+   *
+   * cfg = { table, stats, rows, midTitle, mid }
+   *   table/stats  表格与统计行的元素 id
+   *   midTitle     第三列的表头（两页唯一不同的列名）
+   *   mid(r)       第三列的内容；返回空串则这一格留空
+   */
+  function renderEventTable(cfg) {
+    const t = document.getElementById(cfg.table);
+    if (!t) return;
+    const rows = cfg.rows || [];
+    const res = eventTableRows(rows, cfg.mid);
+    t.innerHTML = '<thead><tr>'
+      + '<th style="width:104px">年份</th><th style="width:190px">事件</th>'
+      + `<th>${cfg.midTitle}</th><th>说明</th>`
+      + `</tr></thead><tbody>${res.html}</tbody>`;
+    const s = document.getElementById(cfg.stats);
+    if (s) s.innerHTML = eventStatsHTML(rows.length, res);
+  }
+
+  /**
+   * 把 eventChangeHTML 的输出剥成「只有数值」——经济页那一列每行已自带「标签：」，
+   * 不需要再印判定药丸与名字。剥法也只写在这里一处。
+   */
+  function plainChange(c, sign, fmt) {
+    return eventChangeHTML(c, sign, fmt)
+      .replace(/^<div class="dl">/, '')
+      .replace(/<span class="pill[^>]*>[^<]*<\/span>/, '')
+      .replace(new RegExp(`^\\s*${c.dom}\\s*`), '')
+      .replace(/\s[↑↓→]\s(?=<b>)/, ' ')
+      .replace(/<\/div>$/, '');
   }
 
   /** 统计行文案——两个报告共用（同一套口径与措辞）。 */
@@ -1475,6 +1512,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     eventChangeHTML,
     eventTableRows,
     eventStatsHTML,
+    renderEventTable,
+    plainChange,
     seriesTip,
     FONT, INK, INK2, INK3, LINE,
     colorOf, axisStyle, axis, tip,
@@ -1986,35 +2025,24 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   }
 
   function renderEvents() {
-    const t = el('tEvents');
-    if (!t) return;
-    const { num, eventTableRows, eventStatsHTML, eventChangeHTML } = window.DSHChart;
-    const rows = D.event_table || [];
-    // 只要数值本身：共享格式里那条明细的判定药丸与领域名去掉，
-    // 行首另写「标签：」——这一列每行都已标好是什么（作者给的写法）。
-    const plain = (c, sign) => eventChangeHTML(c, sign, num)
-      .replace(/^<div class="dl">/, '')
-      .replace(/<span class="pill[^>]*>[^<]*<\/span>/, '')
-      .replace(new RegExp(`^\\s*${c.dom}\\s*`), '')
-      .replace(/\s[↑↓→]\s(?=<b>)/, ' ')
-      .replace(/<\/div>$/, '');
+    const { renderEventTable, plainChange, num } = window.DSHChart;
     // 变化格的内容：四个 GDP 口径与经济产业领域，**同一种写法**
     // （前值 → 谷/峰 → 后值 + 净额），年份由上面的窗口行给出。
     // 数据侧已算好 gdp_changes（窗口与谷/峰规则与主报告一致）；没有数据的不列。
-    // 行与统计的格式在 charts.js 的共享函数里，与治理报告那张表**同一份代码**。
     const mid = (r) => {
       const out = (r.gdp_changes || [])
-        .map((c) => `<div class="dl">${c.dom}：${plain(c, r.sign)}</div>`);
-      if (r.econ) out.push(`<div class="dl">经济产业评分：${plain(r.econ, r.sign)}</div>`);
+        .map((c) => `<div class="dl">${c.dom}：${plainChange(c, r.sign, num)}</div>`);
+      if (r.econ) out.push(`<div class="dl">经济产业评分：${plainChange(r.econ, r.sign, num)}</div>`);
       if (!out.length) return '';
       return `<div class="win">${r.window}</div>${out.join('')}`;
     };
-    const res = eventTableRows(rows, mid);
-    t.innerHTML = '<thead><tr>'
-      + '<th style="width:104px">年份</th><th style="width:190px">事件</th>'
-      + '<th>GDP及经济产业综合评分变化</th><th>说明</th>'
-      + `</tr></thead><tbody>${res.html}</tbody>`;
-    if (el('eventStats')) el('eventStats').innerHTML = eventStatsHTML(rows.length, res);
+    renderEventTable({
+      table: 'tEvents',
+      stats: 'eventStats',
+      rows: D.event_table,
+      midTitle: 'GDP及经济产业综合评分变化',
+      mid,
+    });
   }
 
   /* ───────────────────── 七 · 一种解释（作者分析） ───────────────────── */
