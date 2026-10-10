@@ -433,13 +433,23 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
   border-top:1px dashed var(--line);padding-top:6px}
 .ec-warn{background:#fffaf0;border:1px solid #f0d9a8;border-left:4px solid var(--warn);
   border-radius:8px;padding:11px 14px;font-size:13px;color:#6b4a12;line-height:1.8;margin:12px 0}
-.ec-own{background:#f7f8fa;border:1px dashed var(--line);border-radius:10px;
-  padding:16px 18px;margin-top:14px}
+/* 「六 一种解释」：这是**正文**（作者本人对这一段的解释），不是补充说明——
+   原先浅灰底 + 虚线边框 + 13.5px，看着像注解，比本页正文（.ec-sec>.lead 14px）还小。
+   现在用共享卡片的白底与内边距，正文提到 14px（与 .lead 同级），
+   节的性质由上面的药丸标记承担。作者指出。 */
+/* 「附 数据来源与口径」：条目正文与 caveats 都是**正文**，字号与 .lead 同级；
+   原先 items 那段把颜色与行高写在行内、字号靠继承（偏小）。作者指出。 */
+.ec-src{margin:0 0 12px}
+.ec-src b{font-size:14px}
+.ec-src span{font-size:14px;color:var(--ink2);line-height:1.85}
+
+.ec-own{background:var(--card,#fff);border:1px solid var(--line,#e3e7ec);border-radius:12px;
+  padding:20px 22px;margin-top:14px}
 .ec-own>h3{font-size:15px;margin:0 0 4px}
 .ec-own .lab{display:inline-block;background:var(--accent);color:#fff;font-size:11.5px;
   border-radius:5px;padding:1px 8px;margin-bottom:9px}
-.ec-own h4{font-size:14px;margin:14px 0 5px}
-.ec-own p{font-size:13.5px;line-height:1.9;color:var(--ink2);margin:0 0 8px}
+.ec-own h4{font-size:15px;margin:16px 0 6px}
+.ec-own p{font-size:14px;line-height:1.9;color:var(--ink2);margin:0 0 10px}
 .ec-foot{color:var(--ink3);font-size:12.5px;text-align:center;padding:26px 20px 40px;
   border-top:1px solid var(--line);margin-top:30px;line-height:1.9}
 .ec-ctl{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
@@ -456,7 +466,7 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
 
 <header class="ec-head"><div class="ec-wrap">
   <h1>中国经济的腾飞 <span class="yr">1990–2026</span><span class="h1sub">（含1949建国以来历史数据，与其他九国、台湾地区对比）</span></h1>
-  <p class="author">v3.3.2　·　里探｜2026/10/05｜DeepSeek Harness 辅助　·　<a href="https://gov-capacity-report.netlify.app/" target="_blank" rel="noopener">姊妹报告《国家治理能力的国际比较》 →</a></p>
+  <p class="author">v3.3.3　·　里探｜2026/10/05｜DeepSeek Harness 辅助　·　<a href="https://gov-capacity-report.netlify.app/" target="_blank" rel="noopener">姊妹报告《国家治理能力的国际比较》 →</a></p>
   <div class="ec-disc"><span class="t">声明</span><span>本报告由 <b>DeepSeek Harness</b> 辅助构建：代码、图表与文档均在 AI 辅助下完成，选题、口径把关、关键取舍与纠错由人工完成。</span><span>全部数字来自公开国际数据源（世界银行、IMF《世界经济展望》、Maddison Project），可逐项复核；<b>本报告未经任何专业或官方机构审核</b>，各国与各地区的对比数据<b>仅供参考</b>，不构成对任何国家或地区发展水平的权威评价。</span><span>「<b>六、一种解释</b>」一节是<b>作者本人的解释</b>，不是数据能直接得出的结论；其余各节以数据与口径说明为主。</span></div>
 </div></header>
 
@@ -2496,18 +2506,26 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 
   /* ───────────────────── 七 · 一种解释（作者分析） ───────────────────── */
 
+  /** 文案里的 `**…**` 在 HTML 里换成 <b>；Markdown 版另有 x2md()。 */
+  function mdBold(x) {
+    return String(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  }
+
   function renderSources() {
     const S = D.sources || {};
     const i = el('srcIntro'); const l = el('srcList'); const
       c = el('srcCaveats');
     if (i) i.textContent = S.intro || '';
     if (l) {
-      l.innerHTML = (S.items || []).map((x) => `<div style="margin:0 0 11px"><b>${x[0]}</b><br>`
-          + `<span style="color:var(--ink2);line-height:1.85">${x[1]}</span></div>`).join('');
+      // **这里的 `**…**` 也要转成加粗**——caveats 那条早就转了，items 这条漏了，
+      // 于是页面上把星号字面显示出来（作者截图指出）。文案在 econ_content.py 里
+      // 保持 Markdown 写法：Markdown 版靠它渲染，HTML 版在这里转换。
+      l.innerHTML = (S.items || []).map((x) => `<div class="ec-src"><b>${x[0]}</b><br>`
+          + `<span>${mdBold(x[1])}</span></div>`).join('');
     }
     if (c) {
       c.innerHTML = `<b>四条要留意的边界。</b><br>${
-        (S.caveats || []).map((x) => `· ${String(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}`).join('<br>')}`;
+        (S.caveats || []).map((x) => `· ${mdBold(x)}`).join('<br>')}`;
     }
   }
 
