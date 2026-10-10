@@ -7,7 +7,11 @@
 
 | 托管 | 地址 | 说明 |
 |---|---|---|
-| **Netlify** | 待绑定 | 从本仓库的 `main` 分支自动部署 |
+| **Netlify** | <https://china-economic-development-report.netlify.app/> | 从本仓库的 `main` 分支自动部署 |
+| **GitHub Pages** | <https://insseek.github.io/china-economic-development-report/> | 同上 |
+
+两个地址指向**同一份文件**（本仓库的 `index.html`），互为备份：推送到 `main` 后
+两边都会自动重新部署。
 
 `index.html` 是**单文件**：内嵌 ECharts 与全部数据，**不含任何带 `src` 的外部资源**。
 下载下来断网也能打开。
