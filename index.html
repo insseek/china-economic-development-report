@@ -55,9 +55,6 @@ h3{font-size:16.5px;margin:30px 0 10px;color:var(--ink)}
    此前同一个位置用过四种（.lead / .subnote / .note.crit / .note.info），
    改一种就要记住改几处，且视觉上参差。统一到这里；正文中的提示框仍用 .note。 */
 .lead{color:var(--ink2);margin:0 0 14px;line-height:1.75}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-  padding:20px 22px;box-shadow:var(--shadow);margin-bottom:18px}
-.grid{display:grid;gap:16px}
 .g2{grid-template-columns:repeat(2,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g4{grid-template-columns:repeat(4,1fr)}
@@ -65,10 +62,6 @@ h3{font-size:16.5px;margin:30px 0 10px;color:var(--ink)}
 @media(max-width:720px){.g2,.g3,.g4{grid-template-columns:1fr}}
 
 /* ---------- charts ---------- */
-.chart{width:100%;height:420px}
-.chart.sm{height:250px}
-.chart.lg{height:520px}
-.chart.xl{height:620px}
 /* 国家选择器吸顶：整个板块共用这一个，滑到第 8 张卡也够得着。
    照 .viewbar 的模式——顶部导航高约 46px，故 top:46px；z-index 低于它。 */
 /* ---------- 选择器：全报告一套外观 ---------- */
@@ -82,16 +75,9 @@ h3{font-size:16.5px;margin:30px 0 10px;color:var(--ink)}
    文字若不留内边距就会贴着自己的横条边（作者发现）。 */
 /* 吸顶选择器：**吸顶只是附加行为，外观与卡片内那几处完全一致**（作者要求统一）。
    做法：静止时透明、无边框（内边距用卡片自己的 22px，左缘才对得齐）；
-   只有**真的吸住**时（脚本加 .is-stuck）才补上底色与下边框——
-   否则内容会从底下滚出来叠在按钮上。内边距始终不变，吸住时不会跳一下。 */
-.pickRow.sticky{position:sticky;top:46px;z-index:39;padding:10px 22px;
-  background:transparent;border-bottom:1px solid transparent}
-.pickRow.sticky.is-stuck{background:var(--card);border-bottom-color:var(--line)}
 /* 视图栏沿用 .lbl 的写法，样式归到同一套 */
 /* 选择器按钮统一为 mini 尺寸：视图栏原先用大一号的 .btn，与选择器不一致 */
 .viewbar .btn{padding:4px 10px;font-size:12px}
-.chartTitle{font-size:14px;font-weight:600;margin:0 0 2px}
-.chartNote{font-size:12.5px;color:var(--ink3);margin:0 0 12px}
 
 /* ---------- view switcher ---------- */
 .viewbar{position:sticky;top:46px;z-index:40;background:var(--bg);padding:14px 12px 10px;
@@ -312,6 +298,12 @@ footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px sol
 /* ---------- 打印 / PDF ---------- */
 @media print{
   @page{ size:A4 landscape; margin:10mm 9mm 12mm 9mm; }
+  /* 图表尺寸（打印用，与屏幕上的 .chart 各档一一对应）——这几条是**打印专用**，
+     不能搬到共享层：那里是屏幕尺寸。 */
+  .chart{ height:78mm !important; }
+  .chart.sm{ height:58mm !important; }
+  .chart.lg{ height:92mm !important; }
+  .chart.xl{ height:118mm !important; }
   html,body{background:#fff}
   *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
 
@@ -337,12 +329,8 @@ footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px sol
   .chartTitle,.chartNote{ break-after:avoid; }
 
   /* 固定图表高度，防止 ECharts 在打印时会话成 0 高 */
-  .chart{ height:78mm !important; }
   /* 打印时取消吸顶，否则选择器会压在每页内容上 */
   .pickRow{ position:static; border-bottom:0; padding:0; }
-  .chart.sm{ height:58mm !important; }
-  .chart.lg{ height:92mm !important; }
-  .chart.xl{ height:118mm !important; }
 
   /* 长表格必须允许跨页，否则 113 行的溯源表会被整块丢弃。
      注意 .tblwrap 不能设 break-inside:avoid */
@@ -414,17 +402,11 @@ footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px sol
 .ec-sec>h2 .n{color:var(--ink3);font-weight:400;font-size:15px;margin-right:7px}
 /* 不限最大宽度：作者要求这一行铺满。 */
 .ec-sec>.lead{color:var(--ink2);font-size:14px;line-height:1.85;margin:9px 0 16px}
-.ec-card{background:var(--card);border:1px solid var(--line);border-radius:10px;
-  padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
 .ec-card h3{font-size:15px;margin:0 0 10px}
-.ec-chart{width:100%;height:420px}
 .ec-chart.tall{height:520px}
-.ec-note{color:var(--ink3);font-size:12.5px;line-height:1.7;margin:9px 0 0}
 .ec-sub{font-size:14px;margin:20px 0 9px;padding-left:9px;
   border-left:3px solid var(--ink3);color:var(--ink)}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:14px}
-.ec-mini{background:var(--card);border:1px solid var(--line);border-radius:10px;
-  padding:12px 14px;box-shadow:var(--shadow)}
 .ec-mini h4{font-size:13.5px;margin:0 0 2px;font-weight:600}
 .ec-mini .meta{color:var(--ink3);font-size:11.5px;margin:0 0 6px}
 .ec-mini .plt{width:100%;height:210px}
@@ -474,7 +456,7 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
 
 <header class="ec-head"><div class="ec-wrap">
   <h1>中国经济的腾飞 <span class="yr">1990–2026</span><span class="h1sub">（含1949建国以来历史数据，与其他九国、台湾地区对比）</span></h1>
-  <p class="author">里探｜2026/10/05｜DeepSeek Harness 辅助　·　<a href="https://gov-capacity-report.netlify.app/" target="_blank" rel="noopener">姊妹报告《国家治理能力的国际比较》 →</a></p>
+  <p class="author">v3.3.2　·　里探｜2026/10/05｜DeepSeek Harness 辅助　·　<a href="https://gov-capacity-report.netlify.app/" target="_blank" rel="noopener">姊妹报告《国家治理能力的国际比较》 →</a></p>
   <div class="ec-disc"><span class="t">声明</span><span>本报告由 <b>DeepSeek Harness</b> 辅助构建：代码、图表与文档均在 AI 辅助下完成，选题、口径把关、关键取舍与纠错由人工完成。</span><span>全部数字来自公开国际数据源（世界银行、IMF《世界经济展望》、Maddison Project），可逐项复核；<b>本报告未经任何专业或官方机构审核</b>，各国与各地区的对比数据<b>仅供参考</b>，不构成对任何国家或地区发展水平的权威评价。</span><span>「<b>六、一种解释</b>」一节是<b>作者本人的解释</b>，不是数据能直接得出的结论；其余各节以数据与口径说明为主。</span></div>
 </div></header>
 
@@ -556,13 +538,13 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
       <h3>经济与产业领域综合评分（1949 → 2026）</h3>
       <!-- 国家选择：全项目同一处构建（charts.js 的 countryPicker） -->
       <div class="pickRow" id="domScorePick"></div>
-      <div id="cDomScore" class="ec-chart"></div>
+      <div id="cDomScore" class="ec-chart tall"></div>
       <p class="ec-note" id="domScoreNote"></p>
     </div>
 
     <div class="ec-card">
       <h3>中国 vs 七个高收入国家中位数（1949 → 2026）</h3>
-      <div id="cMed" class="ec-chart"></div>
+      <div id="cMed" class="ec-chart tall"></div>
       <p class="ec-note" id="medNote"></p>
     </div>
 
@@ -571,7 +553,7 @@ table.ec-tbl tr.est td.d::after{content:" 据估算";color:var(--ink3);font-size
          放到板块顶部会让人以为它管整节。
          小图原来由 renderInds() 插到 #s3grid 前面、再把 #s3grid 删掉；
          现在就用这个固定容器，并且可重复渲染（选择器一改整块重画）。 -->
-    <div class="pickRow" id="indsPick"></div>
+    <div class="pickRow sticky" id="indsPick"></div>
     <div id="indsHost"></div>
   </section>
 
@@ -1770,7 +1752,29 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       '.dsh-cs-card .dsh-cs-chart{height:460px;width:100%}',
       // 国家选择器（picker）的外观：**两个报告共用这一份**。
       // 原先只写在主报告模板里，经济页没有——于是那边压根建不出选择器。
+      // 卡片与图表的基本外观：**两个报告共用这一份**（原先只在主报告的模板里，
+      // 经济页另有一套 .ec-card/.ec-note 的值——内边距、圆角、标题字号都不同，
+      // 同一个项目里两张图长得不一样。作者要求以治理报告为基准统一）。
+      // 别名把经济页既有选择器一并纳入，改一处两页同时生效。
+      '.card,.ec-card{background:var(--card,#fff);border:1px solid var(--line,#e3e7ec);',
+      '  border-radius:12px;padding:20px 22px;margin-bottom:18px}',
+      '.chartTitle,.ec-card>h3{font-size:14px;font-weight:600;margin:0 0 2px}',
+      '.chartNote,.ec-note{font-size:12.5px;color:var(--ink3,#8b95a3);margin:0 0 12px}',
+      // 尺寸别名一并给了经济页的 .ec-chart（它原来自己写一套 height，现已并入这里）
+      '.chart,.ec-chart{width:100%;height:420px}',
+      '.chart.sm{height:250px}',
+      '.chart.lg,.ec-chart.tall{height:520px}',
+      '.chart.xl{height:620px}',
+      '.grid{display:grid;gap:16px}',
       '.pickRow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px}',
+      // 吸顶选择器：**两个报告共用这一份**（主报告的领域轨迹与重要指标、
+      // 经济页的「全部指标」）。静止时与同排的普通选择器**完全一样**（透明、无边框），
+      // 只有真的吸住时（脚本加 .is-stuck）才补底色与下边框——否则内容会从底下滚出来
+      // 叠在按钮上。内边距固定，吸住的一刻不会跳。颜色带兜底值，两个页面都成立。
+      '.pickRow.sticky{position:sticky;top:46px;z-index:39;padding:10px 22px;',
+      '  background:transparent;border-bottom:1px solid transparent}',
+      '.pickRow.sticky.is-stuck{background:var(--card,#fff);',
+      '  border-bottom-color:var(--line,#e3e7ec)}',
       '.dsh-pick-label{font-size:12.5px;color:var(--ink2);margin-right:4px}',
       '.dsh-pick-hint{font-size:11.5px;color:var(--ink3);margin-left:6px}',
       '.dsh-cs-card .dsh-ctl,.dsh-gdp-card .dsh-ctl{display:block;position:static;',
@@ -2336,12 +2340,14 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       host.appendChild(grid);
       byGroup[g].forEach((it) => {
         const id = `cInd${k++}`;
-        const cell = document.createElement('div');
-        cell.className = 'ec-mini';
-        cell.innerHTML = `<h4>${it.name
-        }${it.scored ? '' : '　<span style="color:#8b95a3;font-weight:400">（不计入评分）</span>'
-        }</h4><p class="meta">${it.unit || ''}　来源：${it.src || '—'}</p>`
-          + `<div class="plt" id="${id}"></div>`;
+        // 用**共享的 card()** 造卡（主报告的领域轨迹与重要指标数据都走它）——
+        // 结构与样式一处定义，两个报告不会再各写一套。
+        const { el: cell } = C.card({
+          title: it.name + (it.scored ? '' : '（不计入评分）'),
+          note: `${it.unit || ''}　来源：${it.src || '—'}`,
+          id,
+          cls: 'ec-mini',
+        });
         grid.appendChild(cell);
         const sp = C.dataSpan(allYs, [it.values], shown.map((e2) => e2.iso));
         const ys = sp.from === null ? allYs
@@ -2542,6 +2548,10 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     maddPicked = seedPicked();
     domScorePicked = seedPicked();
     indsPicked = seedPicked();
+
+    // 「全部指标」的国家选择器吸顶：往下滚时钉在顶部，随时能改选（作者要求；
+    // 与主报告的领域轨迹/重要指标两处同一套做法）。容器是模板里的静态节点，接一次即可。
+    C.stickyPick('indsPick');
     // 必须**在画任何一张图之前**——图上的竖线标注取自这份，
     // 放到后面（我一开始放在 renderNodes 旁边）图已经画完，标注就全丢了。
     applyMarks();
